@@ -152,10 +152,5 @@ class WidgetSceneGraph(WidgetImgui):
                         if imgui.tree_node(f"Camera {cam_id}"):
                             obj_type = type(cam).__name__
                             obj_color = self.get_object_color(obj_type)
-                            imgui.text(f"Type:")
-                            imgui.same_line()
-                            #imgui.text_colored(f"{obj_type}", *obj_color)
-                            #cam_widget = WidgetCameraProperties(camera_id=cam_id)
-                            #cam_widget.paint(state, cam)
                             imgui.tree_pop()
                     imgui.tree_pop()
