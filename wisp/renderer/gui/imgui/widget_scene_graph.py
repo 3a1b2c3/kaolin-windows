@@ -146,4 +146,16 @@ class WidgetSceneGraph(WidgetImgui):
                     imgui.tree_pop()
                 # TODO (operel): Add proper camera widget caching
                 if imgui.tree_node("Image planes", imgui.TREE_NODE_DEFAULT_OPEN):
+                    for cam_id, cam in state.graph.cameras.items():
+                        self.paint_object_checkbox(state, cam_id)
+                        imgui.same_line()
+                        if imgui.tree_node(f"Camera {cam_id}"):
+                            obj_type = type(cam).__name__
+                            obj_color = self.get_object_color(obj_type)
+                            imgui.text(f"Type:")
+                            imgui.same_line()
+                            #imgui.text_colored(f"{obj_type}", *obj_color)
+                            #cam_widget = WidgetCameraProperties(camera_id=cam_id)
+                            #cam_widget.paint(state, cam)
+                            imgui.tree_pop()
                     imgui.tree_pop()
