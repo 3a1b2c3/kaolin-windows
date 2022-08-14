@@ -145,3 +145,5 @@ class WidgetSceneGraph(WidgetImgui):
                             imgui.tree_pop()
                     imgui.tree_pop()
                 # TODO (operel): Add proper camera widget caching
+                if imgui.tree_node("Image planes", imgui.TREE_NODE_DEFAULT_OPEN):
+                    imgui.tree_pop()
