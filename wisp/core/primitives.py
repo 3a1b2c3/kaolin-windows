@@ -73,6 +73,9 @@ class PrimitivesPack:
         self._points_pos.append(pos)
         self._points_color.append(color)
 
+    @property
+    def points(self) -> Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+        return self._points_pos, self._points_color
 
     @property
     def lines(self) -> Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
