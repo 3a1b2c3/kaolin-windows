@@ -76,9 +76,9 @@ def getObjLayers(f=OPATH, color = [[1, 0, 0, 1]], scale=10):
 
     if not len(vertices):
         return []
-    octree, points, pyramid, prefix = mesh_to_spc(mesh.vertices, mesh.faces, level)
-
-    print("_____points:  ", points[0])
+    # blows memory
+    #octree, points, pyramid, prefix = mesh_to_spc(mesh.vertices, mesh.faces, level)
+    points = vertices
     """ 
     uvs_list=[mesh.uvs.cpu()],
     face_uvs_idx_list=[mesh.face_uvs_idx.cpu()],
@@ -160,8 +160,15 @@ class WispApp(ABC):
         self.prim_painter = PrimitivesPainter() # grid
         # add a mesh
         layers, points = getObjLayers()
+        # add points
         self.points = PrimitivesPainter()
-        # draw pointcloud
+        layers_to_draw = [PrimitivesPack()]
+        color = [[0, 0, 1, 1]]
+        colorT = torch.FloatTensor(color)   
+        for i in range(0, len(points)):
+            layers_to_draw[0].add_points(points[i], colorT)
+        #self.points.redraw(layers_to_draw)
+        # draw mesh
         self.mesh = PrimitivesPainter()
         self.mesh.redraw(layers)
 
