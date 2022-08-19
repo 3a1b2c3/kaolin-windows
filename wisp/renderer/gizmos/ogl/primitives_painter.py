@@ -5,12 +5,12 @@
 # and any modifications thereto.  Any use, reproduction, disclosure or
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
-
+import sys
 from collections import defaultdict
-import numpy as np
 import torch
 from typing import Optional, List
 
+import numpy as np
 from glumpy import gloo, gl
 from kaolin.render.camera import Camera
 
@@ -66,13 +66,14 @@ class PrimitivesPainter(Gizmo):
         self.lines = []
         self.points = []
 
-    def create_points_buffers(self, points):
+    def create_points_buffers(self, points, point_size):
         # TODO (operel): gpu copy is better..
         pos, color = points
         count = len(pos)
-        vertex_buffer = np.zeros(2 * count, [("position", np.float32, 3), ("color", np.float32, 4)])
-        vertex_buffer["position"] = torch.cat([pos], dim=-1).reshape(-1, 3).cpu().numpy()
-        vertex_buffer["color"] = torch.cat([color, color], dim=-1).reshape(-1, 4).cpu().numpy()
+        print("len(pos)", len(pos))
+        vertex_buffer = np.zeros(count, [("position", np.float32, 3), ("color", np.float32, 4)])
+        vertex_buffer["position"] = torch.cat(pos).cpu().numpy()
+        vertex_buffer["color"] = torch.cat(color).reshape(-1, 4).cpu().numpy()
         vertex_buffer = vertex_buffer.view(gloo.VertexBuffer)
         return vertex_buffer
 
@@ -104,7 +105,6 @@ class PrimitivesPainter(Gizmo):
         )
 
         for pack in primitives:
-            print(dir(pack), "___pack:", len(pack._lines_start), len(pack._points_pos))
             if (len(pack._lines_start)):
                 draw_calls['lines']['line_width'][pack.line_width].append(pack)
     
@@ -112,11 +112,11 @@ class PrimitivesPainter(Gizmo):
                     lines = pack.lines
                     vertex_buffer, index_buffer = self.create_line_buffers(lines)
                     self.lines.append((vertex_buffer, index_buffer, pack.line_width))
-            elif (len(pack._points_pos.length)):
+            elif (len(pack._points_pos)):
                 draw_calls['points']['point_size'][pack.point_size].append(pack)
 
-                for point_size, pack in draw_calls['points'].items():
-                    points, color = pack.points
+                for point_size, pack in draw_calls['points']['point_size'].items():
+                    points = pack.points
                     vertex_buffer = self.create_points_buffers(points, point_size)
                     self.points.append((vertex_buffer, point_size))
 
@@ -128,7 +128,6 @@ class PrimitivesPainter(Gizmo):
             self.canvas_program.bind(vertex_buffer)
             self.canvas_program.draw(gl.GL_LINES, index_buffer)
     
-        print ("__render", self.points)
         for point_entry in self.points:
             vertex_buffer, point_size = point_entry
             gl.glPointSize(point_size)

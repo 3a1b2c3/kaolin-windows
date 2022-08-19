@@ -167,7 +167,8 @@ class WispApp(ABC):
         colorT = torch.FloatTensor(color)   
         for i in range(0, len(points)):
             layers_to_draw[0].add_points(points[i], colorT)
-        #self.points.redraw(layers_to_draw)
+        self.points.redraw(layers_to_draw)
+
         # draw mesh
         self.mesh = PrimitivesPainter()
         self.mesh.redraw(layers)
@@ -488,6 +489,8 @@ class WispApp(ABC):
         # mesh
         if (self.mesh.lines):
             self.mesh.render(camera)
+        if (self.points.points):
+            self.points.render(camera)
         self.canvas_dirty = False
 
     def register_background_task(self, hook: Callable[[], None]) -> None:
