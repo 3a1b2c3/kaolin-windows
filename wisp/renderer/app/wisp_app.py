@@ -106,8 +106,14 @@ def getObjLayers(f=OPATH, color = [[1, 0, 0, 1]], scale=10):
         end = vertices[face[0]]
         layers_to_draw[0].add_lines(start, end, colorT)
 
-    #sys.exit()    
-    return layers_to_draw, points
+     # add points
+    points_layers_to_draw = [PrimitivesPack()]
+    color = [[0, 0, 1, 1]]
+    colorT = torch.FloatTensor(color)   
+    for i in range(0, len(points)):
+        points_layers_to_draw[0].add_points(points[i], colorT)
+   
+    return layers_to_draw, points_layers_to_draw
 
 
 class WispApp(ABC):
@@ -158,16 +164,11 @@ class WispApp(ABC):
         self.widgets = self.create_widgets()        # Create gui widgets for this app
         self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
-        # add a mesh
-        layers, points = getObjLayers()
+        # add a mesh, points
+        layers, points_layers_to_draw = getObjLayers()
         # add points
         self.points = PrimitivesPainter()
-        layers_to_draw = [PrimitivesPack()]
-        color = [[0, 0, 1, 1]]
-        colorT = torch.FloatTensor(color)   
-        for i in range(0, len(points)):
-            layers_to_draw[0].add_points(points[i], colorT)
-        self.points.redraw(layers_to_draw)
+        self.points.redraw(points_layers_to_draw)
 
         # draw mesh
         self.mesh = PrimitivesPainter()
