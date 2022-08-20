@@ -33,7 +33,7 @@ from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainte
 from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
 from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
-from .mesh import getObjLayers
+from wisp.ops.mesh import getObjLayers
 
 @contextmanager
 def cuda_activate(img):
@@ -73,19 +73,16 @@ def getDebugCloud(dataSet, wisp_state):
     depths = dataSet.data["masks"] #wisp_state.graph.channels["depth"] #Channel depth is usually a distance to the surface hit point
     # add points
     points_layers_to_draw = [PrimitivesPack()]
-    # return torch.cat(cloud_coords, dim=0), torch.cat(cloud_colors, dim=0)
-    """ 
-    points, colors = create_pointcloud_from_images(rgbs, masks, rays, depths)
-    print(points)
-    """
-    colors =[]
-    points=[]
     colorT = torch.FloatTensor([0, 1, 1, 1]) 
-    for i in range(0, len(rays[0].origins)):
-        #points.append(rays[i].origins)
-        #points_layers_to_draw[0].add_points(points[i], colorT)
-        points_layers_to_draw[0].add_lines(rays[0][i].origins, rays[0][i].origins + rays[0][i].dirs, colorT)
-        print(rays[0][i], "rays[i].shape()", rays[i].shape); # torch.Size([40000])
+    N = rays.origins.shape[0]
+    for j in range(0, len(rays)):
+        print(rays.shape, "rays[j]", rays[j].shape)
+        for i in range(0, len(rays[j].origins)):
+            #points.append(rays[i].origins) 
+            #points_layers_to_draw[0].add_points(points[i], colorT)
+            #i, j:  39999 0 200 40000
+            #print("i, j: ", i, j, len(rays),  len(rays[j].origins)) #i, j:  0 0 200 40000
+            points_layers_to_draw[j].add_lines(rays[j][i].origins, rays[j][i].origins + rays[j][i].dirs, colorT)
         break
     return points_layers_to_draw 
 
