@@ -117,11 +117,11 @@ def getObjLayers(f=OPATH, color = [[1, 0, 0, 1]], scale=10):
 
 
 class WispApp(ABC):
-
+    dataset = None
     # Period of time between user interactions before resetting back to full resolution mode
     COOLDOWN_BETWEEN_RESOLUTION_CHANGES = 0.35  # In seconds
 
-    def __init__(self, wisp_state, window_name="wisp app"):
+    def __init__(self, wisp_state, window_name="wisp app", dataset = None):
         # Initialize app state instance
         self.wisp_state: WispState = wisp_state
         self.init_wisp_state(wisp_state)
@@ -137,7 +137,7 @@ class WispApp(ABC):
         self._is_imgui_hovered = False
         self._is_reposition_imgui_menu = True
         self.canvas_dirty = False
-
+        self.dataset = dataset
         # Note: Normally pycuda.gl.autoinit should be invoked here after the window is created,
         # but wisp already initializes it when the library first loads. See wisp.__init__.py
 
@@ -162,7 +162,7 @@ class WispApp(ABC):
         self.user_mode: CameraControlMode = None
 
         self.widgets = self.create_widgets()        # Create gui widgets for this app
-        self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
+        self.gizmos = self.create_gizmos(data=None)          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
         # add a mesh, points
         layers, points_layers_to_draw = getObjLayers()
@@ -192,12 +192,13 @@ class WispApp(ABC):
         """ Override to define which widgets are used by the wisp app. """
         return [WidgetGPUStats(), WidgetRendererProperties(), WidgetSceneGraph()]
 
-    def create_gizmos(self) -> Dict[str, Gizmo]:
+    def create_gizmos(self, data=None) -> Dict[str, Gizmo]:
         """ Override to define which gizmos are used by the wisp app. """
         gizmos = dict()
         planes = self.wisp_state.renderer.reference_grids
         axes = set(''.join(planes))
         grid_size = 10.0
+        print(" ___create_gizmos ", data)
         for plane in planes:
             gizmos[f'world_grid_{plane}'] = WorldGrid(squares_per_axis=20, grid_size=grid_size,
                                                       line_color=(128, 128, 128), line_size=1, plane=plane)
