@@ -31,6 +31,7 @@ from wisp.renderer.core.control import FirstPersonCameraMode, TrackballCameraMod
 from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainter
 from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
 from wisp.ops.spc.conversions import mesh_to_spc
+from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
 
 @contextmanager
 def cuda_activate(img):
@@ -162,7 +163,7 @@ class WispApp(ABC):
         self.user_mode: CameraControlMode = None
 
         self.widgets = self.create_widgets()        # Create gui widgets for this app
-        self.gizmos = self.create_gizmos(data=None)          # Create canvas widgets for this app
+        self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
         # add a mesh, points
         layers, points_layers_to_draw = getObjLayers()
