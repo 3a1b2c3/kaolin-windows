@@ -22,7 +22,7 @@ class OctreeAS(object):
     def __init__(self):
         self.initialized = False
 
-    def init_from_mesh(self, mesh_path, level, sample_tex=False):
+    def init_from_mesh(self, mesh_path, level, sample_tex=False, samples=1000000):
         """Builds the grid from a path to the mesh.
 
         Only supports OBJ for now.
@@ -48,7 +48,7 @@ class OctreeAS(object):
 
         # Note: This function is not deterministic since it relies on sampling.
         #       Eventually this will be replaced by 3D rasterization.
-        octree = wisp_spc_ops.mesh_to_octree(self.V, self.F, level)
+        octree = wisp_spc_ops.mesh_to_octree(self.V, self.F, level, samples)
         self.init(octree)
     
     def init_from_pointcloud(self, pointcloud, level):
@@ -97,7 +97,8 @@ class OctreeAS(object):
         Returns:
             (void): Will initialize the OctreeAS object.
         """
-        self.octree = octree
+        print("___init")
+        self.octree = octree # add mesh
         self.points, self.pyramid, self.prefix = wisp_spc_ops.octree_to_spc(self.octree)
         self.initialized = True
         self.max_level = self.pyramid.shape[-1] - 2
@@ -142,6 +143,7 @@ class OctreeAS(object):
                 rays.origins, rays.dirs, level, return_depth=True, with_exit=with_exit)
         return ridx, pidx, depth
 
+    # here
     def raymarch(self, rays, level=None, num_samples=64, raymarch_type='voxel'):
         """Samples points along the ray inside the SPC structure.
 
@@ -221,7 +223,7 @@ class OctreeAS(object):
             pidx = pidx[mask]
             #depth_samples = depth[None].repeat(rays.origins.shape[0], 1)[mask][..., None]
             depth_samples = depth[mask][..., None]
-            
+            #print(mask, " raymarch_type ", raymarch_type)       # raymarch_type  ray        
             #deltas = spc_render.diff(depth_samples, boundary).reshape(-1, 1) 
             deltas = deltas[mask].reshape(-1, 1)
 
