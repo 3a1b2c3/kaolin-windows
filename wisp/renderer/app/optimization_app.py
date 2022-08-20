@@ -22,8 +22,10 @@ from wisp.datasets import MultiviewDataset, SDFDataset
 class OptimizationApp(WispApp):
     """ An app for running an optimization and visualizing it's progress interactively in real time. """
 
-    def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str):
-        super().__init__(wisp_state, experiment_name)
+    def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str,
+                dataset=None):
+        super().__init__(wisp_state, experiment_name, dataset)
+
 
         # Tell the renderer to invoke the optimization step() function on every background iteration.
         # The background tasks are constantly invoked by glumpy within the on_idle() event.
