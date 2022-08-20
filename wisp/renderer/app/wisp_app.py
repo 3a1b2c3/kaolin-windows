@@ -44,7 +44,120 @@ def cuda_activate(img):
     yield mapping.array(0, 0)
     mapping.unmap()
 
-OPATH = os.path.normpath(os.path.join(__file__, "../../../../data/test/obj/1.obj"))
+'''
+        # Normalize channel to [0, 1]
+        channels_kit = self.state.graph.channels
+        channel_info = channels_kit.get(selected_output_channel, create_default_channel())
+        normalized_channel = channel_info.normalize_fn(rb_channel.clone())  # Clone to protect from modifications
+
+        # To RGB (in normalized space)
+        # TODO (operel): incorporate color maps
+        channel_dim = normalized_channel.shape[-1]
+        if channel_dim == 1:
+            rgb = torch.cat((normalized_channel, normalized_channel, normalized_channel), dim=-1)
+        elif channel_dim == 2:
+            rgb = torch.cat((normalized_channel, normalized_channel, torch.zeros_like(normalized_channel)), dim=-1)
+        elif channel_dim == 3:
+            rgb = normalized_channel
+        else:
+            raise ValueError('Cannot display channels with more than 3 dimensions over the canvas.')
+            "imgs": rgbs, "masks": masks,
+'''
+def getDebugCloud(dataSet, wisp_state):
+    print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
+    c = dataSet.coords
+    print("c:", c)
+    rays = dataSet.data['rays']
+    rgbs = dataSet.data["imgs"] 
+    masks = dataSet.data["masks"]
+    depths = dataSet.data["masks"] #wisp_state.graph.channels["depth"] #Channel depth is usually a distance to the surface hit point
+    # add points
+    points_layers_to_draw = [PrimitivesPack()]
+    # return torch.cat(cloud_coords, dim=0), torch.cat(cloud_colors, dim=0)
+    """ 
+    points, colors = create_pointcloud_from_images(rgbs, masks, rays, depths)
+    print(points)
+    """
+    colors =[]
+    points=[]
+    colorT = torch.FloatTensor([0, 1, 1, 1]) 
+    for i in range(0, len(rays[0].origins)):
+        #points.append(rays[i].origins)
+        #points_layers_to_draw[0].add_points(points[i], colorT)
+        points_layers_to_draw[0].add_lines(rays[0][i].origins, rays[0][i].origins + rays[0][i].dirs, colorT)
+        print(rays[0][i], "rays[i].shape()", rays[i].shape); # torch.Size([40000])
+        break
+    return points_layers_to_draw 
+
+  
+""" 
+        rgbs (list of torch.FloatTensor): List of RGB tensors of shape [H, W, 3].
+        masks (list of torch.FloatTensor): List of mask tensors of shape [H, W, 1].
+        rays (list of wisp.core.Rays): List of rays.origins and rays.dirs of shape [H, W, 3].
+        depths (list of torch.FloatTensor): List of depth tensors of shape [H, W, 1].
+
+
+ print(" d1: ", dir( self.dataset))
+        print("__________dataset1:", self.dataset.keys()) #__________dataset: dict_keys(['imgs', 'masks', 'rays', 'cameras'])
+        self.dataset['rays']
+        print("\n____initwisp_state.channels ", wisp_state.graph.channels.keys())
+        #def create_pointcloud_from_images(rgbs, masks, rays, depths):
+        sys.exit()
+        '''
+        print("\n____initwisp_state.channels ", wisp_state.graph.channels.keys())
+        print("\n____init_wisp_state.neural_pipelines1", dir(wisp_state.graph.channels["depth"])) # Channel
+        print("\n____init_wisp_state.neural_pipelines2", wisp_state.graph.channels["hit"])
+        print("\n____init_wisp_state.nesural_pipelines3", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].named_parameters)
+        print("\n____init_wisp_state.neural_pipelines4", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
+        print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points))
+        print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points)
+        print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy) #([20., 20., 20.,  ..., 20., 20., 20.])
+        #print("\n____init_wisp_state.neural_pipelines5", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].state_dict)
+        #rays
+        #create_pointcloud_from_images(wisp_state.graph.channels["rgb"])
+
+          self.dense_points = spc_ops.unbatched_get_level_points(self.blas.points, self.blas.pyramid, self.blas_level).clone()
+        self.num_cells = self.dense_points.shape[0]
+        self.occupancy
+
+
+', 'buffers', 'children', 'cpu', 'cuda', 'double', 'dump_patches', 'eval', 'extra_repr', 
+'float', 'forward', 'get_buffer', 
+'get_extra_state', 'get_parameter', 'get_submodule', 'half', 'ipu', 'load_state_dict', 'modules', 'named_buffers', 'named_children',
+ 'named_modules', 'named_parameters', 'nef', 'parameters', 'register_backward_hook', 'register_buffer', 'register_forward_hook',
+  'register_forward_pre_hook', 'register_full_backward_hook', 'register_load_state_dict_post_hook', 
+'register_module', 'register_parameter', 'requires_grad_', 'set_extra_state', 'share_memory', 'state_dict', 
+'to', 'to_empty', 
+'tracer', 'train', 'training', 'type', 'xpu', 'zero_grad']
+            self.render_res_x = None
+        self.render_res_y = None
+        self.output_width = None
+        self.output_height = None
+        self._last_state = dict()
+        self._data_layers 
+        
+         (nef): NeuralRadianceField(  self._data_layers
+    (grid): HashGrid(
+      (codebook): ParameterList(
+             (codebook): ParameterList(
+          (0): Parameter containing: [torch.cuda.FloatTensor of size 4096x2 (GPU 0)]
+          (1): Parameter containing: [torch.cuda.FloatTensor of size 9261x2 (GPU 0)]
+          (2): Parameter containing: [torch.cuda.FloatTensor of size 24389x2 (GPU 0)]
+          (3): Parameter containing: [torch.cuda.FloatTensor of size 59319x2 (GPU 0)]
+          (4): Parameter containing: [torch.cuda.FloatTensor of size 148877x2 (GPU 0)]
+          (5): Parameter containing: [torch.cuda.FloatTensor of size 373248x2 (GPU 0)]
+          (6): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (7): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (8): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (9): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (10): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (11): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (12): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (13): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (14): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+          (15): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
+      )
+"""
 
 class WispApp(ABC):
     dataset = None
@@ -104,8 +217,13 @@ class WispApp(ABC):
         self.mesh = PrimitivesPainter()
         self.mesh.redraw(layers)
 
+        cloudLayer = getDebugCloud(self.dataset, self.wisp_state)
+        self.cloudPoints = PrimitivesPainter()
+        self.cloudPoints.redraw(cloudLayer)
+
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
+
 
         self.redraw()
 
@@ -422,6 +540,7 @@ class WispApp(ABC):
             self.mesh.render(camera)
         if (self.points.points):
             self.points.render(camera)
+        self.cloudPoints.render(camera)
         self.canvas_dirty = False
 
     def register_background_task(self, hook: Callable[[], None]) -> None:
