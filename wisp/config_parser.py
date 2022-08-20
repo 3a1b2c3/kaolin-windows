@@ -12,12 +12,14 @@ import argparse
 import pprint
 import yaml
 import torch
+
 from wisp.datasets import *
 from wisp.models import Pipeline
 from wisp.models.nefs import *
 from wisp.models.grids import *
 from wisp.tracers import *
 from wisp.datasets.transforms import *
+from wisp.ops.test_mesh import get_obj
 
 str2optim = {m.lower(): getattr(torch.optim, m) for m in dir(torch.optim) if m[0].isupper()}
 
@@ -421,7 +423,10 @@ def get_modules_from_config(args):
                     if args.tree_type == 'quad':
                         pipeline.nef.grid.init_from_octree(args.base_lod, args.num_lods)
                     elif args.tree_type == 'geometric':
-                        pipeline.nef.grid.init_from_geometric(16, args.max_grid_res, args.num_lods)
+                        print("Hashgrid")
+                        vertices, faces = get_obj()
+                        pipeline.nef.grid.init_from_geometric(16, args.max_grid_res, args.num_lods,
+                            vertices, faces)
                     else:
                         raise NotImplementedError
                     pipeline.to(device)

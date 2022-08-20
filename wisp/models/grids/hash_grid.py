@@ -82,7 +82,7 @@ class HashGrid(BLASGrid):
         resolutions = [2**lod for lod in octree_lods]
         self.init_from_resolutions(resolutions)
 
-    def init_from_geometric(self, min_width, max_width, num_lods):
+    def init_from_geometric(self, min_width, max_width, num_lods, vertices=None, faces=None):
         """Build the multiscale hash grid with a geometric sequence.
 
         This is an implementation of the geometric multiscale grid from 
@@ -92,9 +92,9 @@ class HashGrid(BLASGrid):
         """
         b = np.exp((np.log(max_width) - np.log(min_width)) / num_lods) 
         resolutions = [int(np.floor(min_width*(b**l))) for l in range(num_lods)]
-        self.init_from_resolutions(resolutions)
+        self.init_from_resolutions(resolutions, vertices, faces)
     
-    def init_from_resolutions(self, resolutions):
+    def init_from_resolutions(self, resolutions, vertices=None, faces=None):
         """Build a multiscale hash grid from a list of resolutions.
         """
         self.resolutions = resolutions
@@ -133,6 +133,8 @@ class HashGrid(BLASGrid):
 
         batch, num_samples, _ = coords.shape
         
+        #print("coords.shape1 ", coords.shape,  coords[0][0])
+        # coords.shape1  torch.Size([840, 1, 3]) tensor([[ 0.7880, -0.9838,  0.9873]], device='cuda:0')
         feats = grid_ops.hashgrid(coords, self.resolutions, self.codebook_bitwidth, lod_idx, self.codebook)
 
         if self.multiscale_type == 'cat':
