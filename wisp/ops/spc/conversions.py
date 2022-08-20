@@ -48,7 +48,7 @@ def pointcloud_to_octree(pointcloud, level, attributes=None, dilate=0):
     return octree
 
 
-def mesh_to_spc(vertices, faces, level):
+def mesh_to_spc(vertices, faces, level, samples=1000000):
     """Construct SPC from a mesh.
 
     Args:
@@ -63,7 +63,7 @@ def mesh_to_spc(vertices, faces, level):
         - pyramid
         - prefix
     """
-    octree = mesh_to_octree(vertices, faces, level)
+    octree = mesh_to_octree(vertices, faces, level, samples)
     points, pyramid, prefix = octree_to_spc(octree)
     return octree, points, pyramid, prefix
 
@@ -87,7 +87,7 @@ def octree_to_spc(octree):
     return points, pyramid, prefix
 
 
-def mesh_to_octree(vertices, faces, level, samples=1000000):
+def mesh_to_octree(vertices, faces, level, meshSamples=1000000):
     """Construct an octree from a mesh.
 
     Args:
@@ -98,7 +98,7 @@ def mesh_to_octree(vertices, faces, level, samples=1000000):
     Returns:
         (torch.ByteTensor): the octree tensor
     """
-    samples = mesh_ops.sample_surface(vertices.cuda(), faces.cuda(), samples)[0]
+    samples = mesh_ops.sample_surface(vertices.cuda(), faces.cuda(), meshSamples)[0]
     # Augment samples... may be a hack that isn't actually needed
     samples = torch.cat([samples,
         samples + (torch.rand_like(samples) * 2.0 - 1.0) * (1.0/(2**(level+1)))], dim=0)
