@@ -30,7 +30,7 @@ class PackedRFTracer(BaseTracer):
         self.bg_color = bg_color
     
     def get_output_channels(self):
-        """Returns the input channels that are supported by this class.
+        """Returns the output channels that are supported by this class.
         
         Returns:
             (set): Set of channel strings.
