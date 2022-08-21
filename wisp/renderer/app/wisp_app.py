@@ -23,6 +23,7 @@ import imgui
 from kaolin.render.camera import Camera
 from kaolin.io import utils
 from kaolin.io import obj
+import kaolin.ops.spc as spc_ops
 
 from wisp.core.primitives import PrimitivesPack
 from wisp.framework import WispState, watch
@@ -33,7 +34,9 @@ from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainte
 from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
 from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
-from wisp.ops.mesh import getObjLayers
+from wisp.ops.test_mesh import get_obj_layers
+from .spc_utils import spc_utils
+
 
 @contextmanager
 def cuda_activate(img):
@@ -62,7 +65,58 @@ def cuda_activate(img):
         else:
             raise ValueError('Cannot display channels with more than 3 dimensions over the canvas.')
             "imgs": rgbs, "masks": masks,
+
+ Since the occupancy information is [compressed]
+ (https://kaolin.readthedocs.io/en/latest/modules/kaolin.ops.spc.html?highlight=spc#octree) and 
+ [packed](https://kaolin.readthedocs.io/en/latest/modules/kaolin.ops.batch.html?highlight=packed#packed), accessing level-specific information consistently involves
+cumulative summarization of the number of "1" bits. <br>
+It makes sense to calculate this information once and then cache it. <br>
+The `pyramid` field does exactly that: it keeps summarizes the number of occupied cells per level, and their cumsum, for fast level-indexing.
 '''
+
+def get_level_points(points, pyramid, level):
+    return points[pyramid[1, level]:pyramid[1, level+1]]
+
+def build(octree):
+    points, pyramid, prefix = spc_utils.octree_to_spc(octree)
+    points_dual, pyramid_dual = spc_utils.create_dual(points, pyramid)
+
+def mergeOctrees(points_hierarchy1, points_hierarchy2, pyramid1, pyramid2,
+            features1, features2, level):
+
+    points1 = points_hierarchy1[pyramid1[-1, 1]:pyramid1[-1, 1] + pyramid1[-1, 0]]
+    points2 = points_hierarchy2[pyramid2[-1, 1]:pyramid2[-1, 1] + pyramid2[-1, 0]]
+    all_points = torch.cat([points_hierarchy1, points_hierarchy2], dim=0)
+    unique, unique_keys, unique_counts = torch.unique(all_points.contiguous(), dim=0,
+        return_inverse=True, return_counts=True)
+    morton, keys = torch.sort(spc_ops.points.points_to_morton(unique.contiguous()).contiguous())
+    points = spc_ops.points.morton_to_points(morton.contiguous())
+    merged_octree = spc_ops.points.unbatched_points_to_octree(points, level, sorted=True)
+
+    all_features = torch.cat([features1, features2], dim=0)
+    feat = torch.zeros(unique.shape[0], all_features.shape[1], device=all_features.device).double()
+    # Here we just do an average when both octrees have features on the same coordinate
+    feat = feat.index_add_(0, unique_keys, all_features.double()) / unique_counts[..., None].double()
+    feat = feat.to(all_features.dtype)
+    merged_features = feat[keys]
+    return merged_octree, merged_features
+
+def create_dual(point_hierarchy, pyramid):
+    pyramid_dual = torch.zeros_like(pyramid)
+    point_hierarchy_dual = []
+    for i in range(pyramid.shape[1]-1):
+        corners = spc_ops.points_to_corners(get_level_points(point_hierarchy, pyramid, i)).reshape(-1, 3)
+        points_dual = torch.unique(corners, dim=0)
+        sort_idxes = spc_ops.points_to_morton(points_dual).sort()[1]
+        points_dual = points_dual[sort_idxes]
+        point_hierarchy_dual.append(points_dual)
+        pyramid_dual[0, i] = len(point_hierarchy_dual[i])
+        if i > 0:
+            pyramid_dual[1, i] += pyramid_dual[:, i-1].sum()
+    pyramid_dual[1, pyramid.shape[1]-1] += pyramid_dual[:, pyramid.shape[1]-2].sum()
+    point_hierarchy_dual = torch.cat(point_hierarchy_dual, dim=0)
+    return point_hierarchy_dual, pyramid_dual
+
 def getDebugCloud(dataSet, wisp_state):
     print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
     c = dataSet.coords
@@ -84,7 +138,15 @@ def getDebugCloud(dataSet, wisp_state):
             #print("i, j: ", i, j, len(rays),  len(rays[j].origins)) #i, j:  0 0 200 40000
             points_layers_to_draw[j].add_lines(rays[j][i].origins, rays[j][i].origins + rays[j][i].dirs, colorT)
         break
-    return points_layers_to_draw 
+
+    dpoints_layers_to_draw = [PrimitivesPack()]
+    points = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points
+    #points1 = point_hierarchy1[pyramid1[-1, 1]:pyramid1[-1, 1] + pyramid1[-1, 0]
+    colorT = torch.FloatTensor([1, 1, 1, 1]) 
+    for i in range(0, len(points)): 
+        dpoints_layers_to_draw[0].add_points(points[i], colorT)
+    # wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy
+    return points_layers_to_draw, dpoints_layers_to_draw
 
   
 """ 
@@ -158,6 +220,8 @@ def getDebugCloud(dataSet, wisp_state):
 
 class WispApp(ABC):
     dataset = None
+    mesh = None
+    cloudPoints = None
     # Period of time between user interactions before resetting back to full resolution mode
     COOLDOWN_BETWEEN_RESOLUTION_CHANGES = 0.35  # In seconds
 
@@ -205,7 +269,7 @@ class WispApp(ABC):
         self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
         # add a mesh, points
-        layers, points_layers_to_draw = getObjLayers()
+        layers, points_layers_to_draw = get_obj_layers()
         # add points
         self.points = PrimitivesPainter()
         self.points.redraw(points_layers_to_draw)
@@ -214,9 +278,10 @@ class WispApp(ABC):
         self.mesh = PrimitivesPainter()
         self.mesh.redraw(layers)
 
-        cloudLayer = getDebugCloud(self.dataset, self.wisp_state)
-        self.cloudPoints = PrimitivesPainter()
-        self.cloudPoints.redraw(cloudLayer)
+        cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
+        #self.cloudPoints = PrimitivesPainter()
+        #self.cloudPoints.redraw(cloudLayer)
+        #self.cloudPoints.redraw(dpoints_layers_to_draw)
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
@@ -415,7 +480,7 @@ class WispApp(ABC):
         imgui.render()
 
     def render_canvas(self, render_core, time_delta, force_render):
-        renderbuffer = render_core.render(time_delta, force_render)
+        renderbuffer = render_core.render(time_delta, force_render) # main renderer
         buffer_attachment = renderbuffer.image().rgba
         buffer_attachment = buffer_attachment.flip([0])  # Flip y axis
         img = buffer_attachment.byte().contiguous()
@@ -519,7 +584,7 @@ class WispApp(ABC):
 
         # render canvas: core proceeds by invoking internal renderers tracers
         # output is rendered on a Renderbuffer object, backed by torch tensors
-        img, depth_img = self.render_canvas(self.render_core, dt, self.canvas_dirty)
+        img, depth_img = self.render_canvas(self.render_core, dt, self.canvas_dirty)# main renderer
 
         # glumpy code injected within the pyimgui render loop to blit the rendercore output to the actual canvas
         # The torch buffers are copied by pycuda to CUDA buffers, connected as shared resources as 2d GL textures
@@ -537,7 +602,8 @@ class WispApp(ABC):
             self.mesh.render(camera)
         if (self.points.points):
             self.points.render(camera)
-        self.cloudPoints.render(camera)
+        if (self.cloudPoints):
+            self.cloudPoints.render(camera)
         self.canvas_dirty = False
 
     def register_background_task(self, hook: Callable[[], None]) -> None:

@@ -29,8 +29,23 @@ from wisp.accelstructs import OctreeAS
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../../data/test/obj/1.obj"))
 
+'''
+# indexing by masking follow naturally the morton order
+What is Morton Order (Z-Order, Lebesgue Curve)
+morton (torch.LongTensor): The morton codes of quantized 3D points,
+of shape :math:`(\text{num_points})`.
+// Uses the morton buffer to construct an octree. It is the user's responsibility to allocate
+// space for these zero-init buffers, and for the morton buffer, to allocate the buffer from the back 
+// with the occupied positions.
+'''
+
+def build(octree):
+    points, pyramid, prefix = spc_utils.octree_to_spc(self.octree)
+    points_dual, self.pyramid_dual = spc_utils.create_dual(self.points, self.pyramid)
+
 def mergeOctrees(points_hierarchy1, points_hierarchy2, pyramid1, pyramid2,
             features1, features2, level):
+
     points1 = points_hierarchy1[pyramid1[-1, 1]:pyramid1[-1, 1] + pyramid1[-1, 0]]
     points2 = points_hierarchy2[pyramid2[-1, 1]:pyramid2[-1, 1] + pyramid2[-1, 0]]
     all_points = torch.cat([points_hierarchy1, points_hierarchy2], dim=0)
