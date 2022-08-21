@@ -23,11 +23,30 @@ from wisp.models.grids import BLASGrid
 from wisp.models.decoders import BasicDecoder
 
 import kaolin.ops.spc as spc_ops
+from kaolin.ops.spc import points_to_morton, morton_to_points, unbatched_points_to_octree
 
 from wisp.accelstructs import OctreeAS
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../../data/test/obj/1.obj"))
 
+def mergeOctrees(points_hierarchy1, points_hierarchy2, pyramid1, pyramid2,
+            features1, features2, level):
+    points1 = points_hierarchy1[pyramid1[-1, 1]:pyramid1[-1, 1] + pyramid1[-1, 0]]
+    points2 = points_hierarchy2[pyramid2[-1, 1]:pyramid2[-1, 1] + pyramid2[-1, 0]]
+    all_points = torch.cat([points_hierarchy1, points_hierarchy2], dim=0)
+    unique, unique_keys, unique_counts = torch.unique(all_points.contiguous(), dim=0,
+                                                                                        return_inverse=True, return_counts=True)
+    morton, keys = torch.sort(points_to_morton(unique.contiguous()).contiguous())
+    points = morton_to_points(morton.contiguous())
+    merged_octree = unbatched_points_to_octree(points, level, sorted=True)
+
+    all_features = torch.cat([features1, features2], dim=0)
+    feat = torch.zeros(unique.shape[0], all_features.shape[1], device=all_features.device).double()
+    # Here we just do an average when both octrees have features on the same coordinate
+    feat = feat.index_add_(0, unique_keys, all_features.double()) / unique_counts[..., None].double()
+    feat = feat.to(all_features.dtype)
+    merged_features = feat[keys]
+    return merged_octree, merged_features
 
 class HashGrid(BLASGrid):
     """This is a feature grid where the features are defined in a codebook that is hashed.
@@ -73,7 +92,9 @@ class HashGrid(BLASGrid):
     
         ############ here
         self.blas = OctreeAS()
-        #self.blas.init_from_mesh(OPATH, 1, True, samples=1000000)
+        self.blasMesh = OctreeAS()
+        self.blasMesh.init_from_mesh(OPATH, 1, True, samples=1000000)
+
         # pointcloud_to_octree(pointcloud, level, attributes=None, dilate=0):
         self.blas.init_dense(self.blas_level)
         #    return point_hierarchy[pyramid[1, level]:pyramid[1, level + 1]]

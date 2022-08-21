@@ -13,7 +13,7 @@ from wisp.core import RenderBuffer
 from wisp.utils import PsDebugger, PerfTimer
 from wisp.tracers import BaseTracer
 
-
+#actual raytracer
 class PackedRFTracer(BaseTracer):
     """Tracer class for sparse (packed) radiance fields.
 
@@ -47,6 +47,7 @@ class PackedRFTracer(BaseTracer):
 
     def trace(self, nef, channels, rays, lod_idx=None, raymarch_type='voxel', num_steps=64, step_size=1.0, bg_color='white'):
         """Trace the rays against the neural field.
+        Done for training as well
 
         Args:
             nef (nn.Module): A neural field that uses a grid class.
@@ -82,7 +83,7 @@ class PackedRFTracer(BaseTracer):
                 level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
 
         timer.check("Raymarch")
-
+        # samples coordinates
         # Check for the base case where the BLAS traversal hits nothing
         if ridx.shape[0] == 0:
             if bg_color == 'white':
@@ -106,7 +107,9 @@ class PackedRFTracer(BaseTracer):
         # Compute the color and density for each ray and their samples
         color, density = nef(coords=samples, ray_d=rays.dirs.index_select(0, ridx), pidx=pidx, lod_idx=lod_idx,
                              channels=["rgb", "density"])
-
+        #torch.Size([1699]) 16384  __color, density torch.Size([5441, 1, 3]) torch.Size([5441, 1, 1])
+        #print(ridx_hit[0], N, lod_idx, " __color, density",  color.shape, density.shape)
+        #print(ridx_hit.shape, N,  " __color, density",  color.shape, density.shape)
         timer.check("RGBA")        
         del ridx, pidx, rays
 
@@ -140,9 +143,9 @@ class PackedRFTracer(BaseTracer):
         else:
             rgb = torch.zeros(N, 3, device=color.device)
             color = alpha * ray_colors
-
+        # color
         rgb[ridx_hit.long(), :3] = color
         
         timer.check("Composit")
 
-        return RenderBuffer(depth=depth, hit=hit, rgb=rgb, alpha=out_alpha)
+        return RenderBuffer(depth=depth, hit=hit, rgb=rgb, alpha=out_alpha)#, samples
