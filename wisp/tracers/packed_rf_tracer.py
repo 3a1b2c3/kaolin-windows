@@ -45,6 +45,7 @@ class PackedRFTracer(BaseTracer):
         """
         return set(["rgb", "density"])
 
+    #ray
     def trace(self, nef, channels, rays, lod_idx=None, raymarch_type='voxel', num_steps=64, step_size=1.0, bg_color='white'):
         """Trace the rays against the neural field.
         Done for training as well
@@ -72,7 +73,6 @@ class PackedRFTracer(BaseTracer):
         timer = PerfTimer(activate=False, show_memory=False)
         N = rays.origins.shape[0]
         
-
         if lod_idx is None:
             lod_idx = nef.grid.num_lods - 1
 
@@ -100,7 +100,16 @@ class PackedRFTracer(BaseTracer):
             return RenderBuffer(depth=depth, hit=hit, rgb=rgb, alpha=alpha)
         
         timer.check("Boundary")
+        '''
+        Since we're assuming here our surface is opaque, for each ray, we only care about the <b>nugget</b>
+        closest to the camera. <br>
+        Note that per "ray-pack", the returned <b>nuggets</b> are already sorted by depth. <br>
+        The method below returns a boolean mask which specifies which <b>nuggets</b> represent a "first-hit"
         
+        masked_nugs = kal.render.spc.mark_pack_boundaries(nugs_ridx)
+        nugs_ridx = nugs_ridx[masked_nugs]
+        nugs_pidx = nugs_pidx[masked_nugs]
+        '''
         # Get the indices of the ray tensor which correspond to hits
         ridx_hit = ridx[spc_render.mark_pack_boundaries(ridx.int())]
         
@@ -147,5 +156,20 @@ class PackedRFTracer(BaseTracer):
         rgb[ridx_hit.long(), :3] = color
         
         timer.check("Composit")
-
+        print(rgb[0], "________[ridx_hit:" ,ridx_hit[0], raymarch_type)
         return RenderBuffer(depth=depth, hit=hit, rgb=rgb, alpha=out_alpha)#, samples
+
+'''
+# 1. We initialize an empty canvas.
+image = torch.ones_like(ray_o)
+
+# 2. We'll query all first-hit nuggets to obtain their corresponding point-id (which cell they hit in the SPC).
+ridx = nugs_ridx.long()
+pidx = nugs_pidx.long() - pyramid[1,level]
+
+# 3. We'll query the features auxilary structure to obtain the color.
+# 4. We set each ray value as the corresponding nugget color.
+image[ridx] = features[pidx]
+
+image = image.reshape(1024, 1024, 3)
+'''
