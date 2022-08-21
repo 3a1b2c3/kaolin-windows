@@ -11,8 +11,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
 import logging as log
-import time
-import math
+import os
 
 from wisp.utils import PsDebugger, PerfTimer
 from wisp.ops.spc import sample_spc
@@ -27,6 +26,9 @@ import kaolin.ops.spc as spc_ops
 
 from wisp.accelstructs import OctreeAS
 
+OPATH = os.path.normpath(os.path.join(__file__, "../../../../data/test/obj/1.obj"))
+
+
 class HashGrid(BLASGrid):
     """This is a feature grid where the features are defined in a codebook that is hashed.
     """
@@ -38,7 +40,7 @@ class HashGrid(BLASGrid):
         feature_std        : float = 0.0,
         feature_bias       : float = 0.0,
         codebook_bitwidth  : int   = 16,
-        blas_level         : int   = 7,
+        blas_level         : int   = 7, # octree
         **kwargs
     ):
         """Initialize the hash grid class.
@@ -69,11 +71,15 @@ class HashGrid(BLASGrid):
 
         self.kwargs = kwargs
     
+        ############ here
         self.blas = OctreeAS()
+        #self.blas.init_from_mesh(OPATH, 1, True, samples=1000000)
+        # pointcloud_to_octree(pointcloud, level, attributes=None, dilate=0):
         self.blas.init_dense(self.blas_level)
+        #    return point_hierarchy[pyramid[1, level]:pyramid[1, level + 1]]
         self.dense_points = spc_ops.unbatched_get_level_points(self.blas.points, self.blas.pyramid, self.blas_level).clone()
         self.num_cells = self.dense_points.shape[0]
-        self.occupancy = torch.ones(self.num_cells) * 20.0
+        self.occupancy = torch.ones(self.num_cells) * 20.0 #check pyramide
 
     def init_from_octree(self, base_lod, num_lods):
         """Builds the multiscale hash grid with an octree sampling pattern.
