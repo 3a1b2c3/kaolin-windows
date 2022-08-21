@@ -16,15 +16,14 @@ import os
 from wisp.utils import PsDebugger, PerfTimer
 from wisp.ops.spc import sample_spc
 
-import wisp.ops.spc as wisp_spc_ops
 import wisp.ops.grid as grid_ops
 
 from wisp.models.grids import BLASGrid
 from wisp.models.decoders import BasicDecoder
 
-import kaolin.ops.spc as spc_ops
-from kaolin.ops.spc import points_to_morton, morton_to_points, unbatched_points_to_octree
-
+from kaolin.ops.spc.points import points_to_morton, morton_to_points, unbatched_points_to_octree
+from kaolin.rep.spc import Spc
+from kaolin.ops.spc import points_to_morton, morton_to_points, unbatched_points_to_octree, unbatched_get_level_points
 from wisp.accelstructs import OctreeAS
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../../data/test/obj/1.obj"))
@@ -37,11 +36,38 @@ of shape :math:`(\text{num_points})`.
 // Uses the morton buffer to construct an octree. It is the user's responsibility to allocate
 // space for these zero-init buffers, and for the morton buffer, to allocate the buffer from the back 
 // with the occupied positions.
-'''
 
-def build(octree):
-    points, pyramid, prefix = spc_utils.octree_to_spc(self.octree)
-    points_dual, self.pyramid_dual = spc_utils.create_dual(self.points, self.pyramid)
+'''
+def test(level, features):
+    # Avoid duplications if cells occupy more than one point
+    unique, unique_keys, unique_counts = torch.unique(points.contiguous(), dim=0,
+                                                      return_inverse=True, return_counts=True)
+
+    # Create octree hierarchy
+    morton, keys = torch.sort(points_to_morton(unique.contiguous()).contiguous())
+    points = morton_to_points(morton.contiguous())
+    octree = unbatched_points_to_octree(points, level, sorted=True)
+
+    # Organize features for octree leaf nodes
+    feat = None
+    if features is not None:
+        # Feature collision of multiple points sharing the same cell is consolidated here.
+        # Assumes mean averaging
+        feat_dtype = features.dtype
+        is_fp = features.is_floating_point()
+
+        # Promote to double precision dtype to avoid rounding errors
+        feat = torch.zeros(unique.shape[0], features.shape[1], device=features.device).double()
+        feat = feat.index_add_(0, unique_keys, features.double()) / unique_counts[..., None].double()
+        if not is_fp:
+            feat = torch.round(feat)
+        feat = feat.to(feat_dtype)
+        feat = feat[keys]
+
+    # A full SPC requires octree hierarchy + auxilary data structures
+    lengths = torch.tensor([len(octree)], dtype=torch.int32)   # Single entry batch
+    return Spc(octrees=octree, lengths=lengths, features=feat)
+
 
 def mergeOctrees(points_hierarchy1, points_hierarchy2, pyramid1, pyramid2,
             features1, features2, level):
@@ -106,14 +132,13 @@ class HashGrid(BLASGrid):
         self.kwargs = kwargs
     
         ############ here
+        blasMesh = OctreeAS()
+        blasMesh.init_from_mesh(OPATH, 1, True, samples=1000000)
         self.blas = OctreeAS()
-        self.blasMesh = OctreeAS()
-        self.blasMesh.init_from_mesh(OPATH, 1, True, samples=1000000)
-
         # pointcloud_to_octree(pointcloud, level, attributes=None, dilate=0):
         self.blas.init_dense(self.blas_level)
         #    return point_hierarchy[pyramid[1, level]:pyramid[1, level + 1]]
-        self.dense_points = spc_ops.unbatched_get_level_points(self.blas.points, self.blas.pyramid, self.blas_level).clone()
+        self.dense_points = unbatched_get_level_points(self.blas.points, self.blas.pyramid, self.blas_level).clone()
         self.num_cells = self.dense_points.shape[0]
         self.occupancy = torch.ones(self.num_cells) * 20.0 #check pyramide
 
