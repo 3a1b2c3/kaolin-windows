@@ -34,9 +34,9 @@ from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainte
 from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
 from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
-from wisp.ops.test_mesh import get_obj_layers
-from .spc_utils import spc_utils
 
+from wisp.ops.test_mesh import get_obj_layers
+from .spc_utils import create_dual, octree_to_spc
 
 @contextmanager
 def cuda_activate(img):
@@ -78,8 +78,8 @@ def get_level_points(points, pyramid, level):
     return points[pyramid[1, level]:pyramid[1, level+1]]
 
 def build(octree):
-    points, pyramid, prefix = spc_utils.octree_to_spc(octree)
-    points_dual, pyramid_dual = spc_utils.create_dual(points, pyramid)
+    points, pyramid, prefix = octree_to_spc(octree)
+    points_dual, pyramid_dual = create_dual(points, pyramid)
 
 def mergeOctrees(points_hierarchy1, points_hierarchy2, pyramid1, pyramid2,
             features1, features2, level):
