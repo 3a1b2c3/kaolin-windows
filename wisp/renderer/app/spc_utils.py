@@ -29,6 +29,55 @@ import pandas as pd
 import kaolin.ops.spc as spc_ops
 #from lib.torchgp import sample_surface
 
+
+def create_dual(point_hierarchy, pyramid):
+    pyramid_dual = torch.zeros_like(pyramid)
+    point_hierarchy_dual = []
+    for i in range(pyramid.shape[1]-1):
+        corners = spc_ops.points_to_corners(get_level_points(point_hierarchy, pyramid, i)).reshape(-1, 3)
+        points_dual = torch.unique(corners, dim=0)
+        sort_idxes = spc_ops.points_to_morton(points_dual).sort()[1]
+        points_dual = points_dual[sort_idxes]
+        point_hierarchy_dual.append(points_dual)
+        pyramid_dual[0, i] = len(point_hierarchy_dual[i])
+        if i > 0:
+            pyramid_dual[1, i] += pyramid_dual[:, i-1].sum()
+    pyramid_dual[1, pyramid.shape[1]-1] += pyramid_dual[:, pyramid.shape[1]-2].sum()
+    point_hierarchy_dual = torch.cat(point_hierarchy_dual, dim=0)
+    return point_hierarchy_dual, pyramid_dual
+
+def get_level_points(points, pyramid, level):
+    return points[pyramid[1, level]:pyramid[1, level+1]]
+
+def get_level_points_from_octree(octree, level):
+    points, pyramid, _prefix = octree_to_spc(octree)
+    return get_level_points(points, pyramid, level)
+
+def build(octree):
+    points, pyramid, prefix = octree_to_spc(octree)
+    points_dual, pyramid_dual = create_dual(points, pyramid)
+    return points_dual, pyramid_dual
+
+def mergeOctrees(points_hierarchy1, points_hierarchy2, pyramid1, pyramid2,
+            features1, features2, level):
+
+    points1 = points_hierarchy1[pyramid1[-1, 1]:pyramid1[-1, 1] + pyramid1[-1, 0]]
+    points2 = points_hierarchy2[pyramid2[-1, 1]:pyramid2[-1, 1] + pyramid2[-1, 0]]
+    all_points = torch.cat([points_hierarchy1, points_hierarchy2], dim=0)
+    unique, unique_keys, unique_counts = torch.unique(all_points.contiguous(), dim=0,
+        return_inverse=True, return_counts=True)
+    morton, keys = torch.sort(spc_ops.points.points_to_morton(unique.contiguous()).contiguous())
+    points = spc_ops.points.morton_to_points(morton.contiguous())
+    merged_octree = spc_ops.points.unbatched_points_to_octree(points, level, sorted=True)
+
+    all_features = torch.cat([features1, features2], dim=0)
+    feat = torch.zeros(unique.shape[0], all_features.shape[1], device=all_features.device).double()
+    # Here we just do an average when both octrees have features on the same coordinate
+    feat = feat.index_add_(0, unique_keys, all_features.double()) / unique_counts[..., None].double()
+    feat = feat.to(all_features.dtype)
+    merged_features = feat[keys]
+    return merged_octree, merged_features
+
 def create_dense_octree(level):
     """Creates a dense SPC model"""
     coords = np.arange(2**level)

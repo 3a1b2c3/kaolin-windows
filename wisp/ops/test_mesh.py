@@ -18,8 +18,7 @@ from kaolin.io import utils
 from kaolin.io import obj
 
 from wisp.core.primitives import PrimitivesPack
-from wisp.ops.spc.conversions import mesh_to_spc
-
+from wisp.ops.spc.conversions import mesh_to_spc, mesh_to_octree
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../data/test/obj/1.obj"))
 
@@ -58,10 +57,9 @@ def get_obj(f=OPATH, scale=10):
 
 
         
-def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=10):
+def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level=10):
     level = 1
-    # blows memory
-    #octree, points, pyramid, prefix = mesh_to_spc(mesh.vertices, mesh.faces, level)
+
     vertices, faces = get_obj(f, scale)
     if not len(vertices):
         return []
@@ -98,4 +96,7 @@ def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=10):
     for i in range(0, len(vertices)):
         points_layers_to_draw[0].add_points(vertices[i], colorT)
    
-    return layers_to_draw, points_layers_to_draw
+    #octree, points, pyramid, prefix = mesh_to_spc(mesh.vertices, mesh.faces, level)
+    spc = mesh_to_spc(vertices, faces, 10)
+
+    return layers_to_draw, points_layers_to_draw, spc
