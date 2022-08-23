@@ -18,8 +18,9 @@ from kaolin.io import utils
 from kaolin.io import obj
 
 from wisp.core.primitives import PrimitivesPack
-from wisp.ops.spc.conversions import mesh_to_spc, mesh_to_octree
+from wisp.ops.spc.conversions import mesh_to_spc#, mesh_to_octree
 from wisp.accelstructs import OctreeAS
+from .spc_utils import get_level_points_from_octree
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../data/test/obj/1.obj"))
 
@@ -55,6 +56,10 @@ def get_obj(f=OPATH, scale=10):
     vertices = mesh.vertices.cpu()
     faces = mesh.faces.cpu()
     return vertices, faces 
+def points_to_layer(vertices, points_layers_to_draw, colorT):  
+    for i in range(0, len(vertices)):
+        points_layers_to_draw[0].add_points(vertices[i], colorT)
+    return points_layers_to_draw
 
 
 def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level=10):
@@ -93,6 +98,7 @@ def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level
      # add points
     points_layers_to_draw = [PrimitivesPack()]
     colorT = torch.FloatTensor(color[1])   
+    # points_to_layer(vertices, points_layers_to_draw, colorT):
     for i in range(0, len(vertices)):
         points_layers_to_draw[0].add_points(vertices[i], colorT)
     return layers_to_draw, points_layers_to_draw
@@ -106,3 +112,22 @@ def get_OctreeAS(f=OPATH):
 
     return layers_to_draw, points_layers_to_draw, spc
 
+def octree_to_layers(octreeAS, level):
+    layers_to_draw = [PrimitivesPack()]
+    points = get_level_points_from_octree(octreeAS, level)
+    print("octree", points.shape)
+    return layers_to_draw
+
+"""
+
+def get_level_points_from_octree(octree, level):
+    points, pyramid, _prefix = octree_to_spc(octree)
+    return get_level_points(points, pyramid, level)
+
+'mats', 'max_level', 'octree', 'points', 'prefix', 'pyramid', 'query', 'raymarch', 'raytrace', 'texf', 'texv']
+        ...max_level 1 torch.Size([9, 3])
+        self.octree = octree # add mesh
+        self.points, self.pyramid, self.prefix = wisp_spc_ops.octree_to_spc(self.octree)
+        self.initialized = True
+        self.max_level = self.pyramid.shape[-1] - 2
+"""

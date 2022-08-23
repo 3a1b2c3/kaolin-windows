@@ -33,10 +33,11 @@ from wisp.renderer.core.control import FirstPersonCameraMode, TrackballCameraMod
 from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainter
 from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
 from wisp.ops.spc.conversions import mesh_to_spc
-from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
+#from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
 
-from wisp.ops.test_mesh import get_obj_layers
-from .spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
+from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS#, octree_to_layers
+from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
+from wisp.ops.spc_formatting import describe_octree
 
 @contextmanager
 def cuda_activate(img):
@@ -75,8 +76,8 @@ The `pyramid` field does exactly that: it keeps summarizes the number of occupie
 '''
 
 
-def getDebugCloud(dataSet, wisp_state):
-    print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
+def getDebugCloud(dataSet, wisp_state, level=3):
+    #print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
     c = dataSet.coords
     print("c:", c)
     rays = dataSet.data['rays']
@@ -87,7 +88,8 @@ def getDebugCloud(dataSet, wisp_state):
     dpoints_layers_to_draw = [PrimitivesPack()]
     points_layers_to_draw = [PrimitivesPack()]
     colorT = torch.FloatTensor([0, 1, 1, 1]) 
-    points = get_level_points_from_octree(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, 7)
+    #describe_octree(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level)
+    points = get_level_points_from_octree(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level)
     for i in range(0, len(points)): 
         dpoints_layers_to_draw[0].add_points(points[i], colorT)
 
@@ -234,7 +236,11 @@ class WispApp(ABC):
         self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
         # add a mesh, points
-        layers, points_layers_to_draw, spc = get_obj_layers()
+        layers, points_layers_to_draw = get_obj_layers()
+        o = get_OctreeAS()
+        print("...max_level", o.max_level, o.points.shape)
+        #o_layer = octree_to_layers(o)
+
         # add points
         self.points = PrimitivesPainter()
         self.points.redraw(points_layers_to_draw)
@@ -568,6 +574,8 @@ class WispApp(ABC):
         if (self.points.points):
             self.points.render(camera)
         if (self.cloudPoints):
+            cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
+            self.cloudPoints.redraw(cloudLayer)
             self.cloudPoints.render(camera)
         self.canvas_dirty = False
 
