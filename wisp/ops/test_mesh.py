@@ -114,8 +114,9 @@ def get_OctreeAS(f=OPATH):
 
 def octree_to_layers(octreeAS, level):
     layers_to_draw = [PrimitivesPack()]
-    points = get_level_points_from_octree(octreeAS, level)
-    print("octree", points.shape)
+    print("______________octree1:", octreeAS.octree)
+    points = get_level_points_from_octree(octreeAS.octree, level)
+    print("______________octree:", points.shape)
     return layers_to_draw
 
 """
