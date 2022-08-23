@@ -49,6 +49,7 @@ class MultiviewTrainer(BaseTrainer):
 
         # Map to device
         rays = data['rays'].to(self.device).squeeze(0)
+        # rgb
         img_gts = data['imgs'].to(self.device).squeeze(0)
 
         timer.check("map to device")
@@ -70,6 +71,7 @@ class MultiviewTrainer(BaseTrainer):
             lod_idx = None
 
         with torch.cuda.amp.autocast():
+            # train rgb
             rb = self.pipeline(rays=rays, lod_idx=lod_idx, channels=["rgb"])
             timer.check("inference")
 
