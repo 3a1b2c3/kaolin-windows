@@ -30,7 +30,7 @@ from wisp.renderer.core.control import CameraControlMode, WispKey, WispMouseButt
 from wisp.renderer.core.control import FirstPersonCameraMode, TrackballCameraMode, TurntableCameraMode
 from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainter
 from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
-
+from wisp.ops.spc.conversions import mesh_to_spc
 
 @contextmanager
 def cuda_activate(img):
@@ -43,6 +43,27 @@ def cuda_activate(img):
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../../data/test/obj/1.obj"))
 
+'''
+kaolin-wisp\wisp\ops\spc\conversions.py
+def mesh_to_spc(vertices, faces, level):
+    """Construct SPC from a mesh.
+
+    Args:
+        vertices (torch.FloatTensor): Vertices of shape [V, 3]
+        faces (torch.LongTensor): Face indices of shape [F, 3]
+        level (int): The level of the octree
+
+    Returns:
+        (torch.ByteTensor, torch.ShortTensor, torch.LongTensor, torch.BoolTensor):
+        - the octree tensor
+        - point hierarchy
+        - pyramid
+        - prefix
+    """
+    octree = mesh_to_octree(vertices, faces, level)
+    points, pyramid, prefix = octree_to_spc(octree)
+    return octree, points, pyramid, prefix 
+'''
 def getObjLayers(f=OPATH, color = [[1, 0, 0, 1]], scale=10):
     mesh = obj.import_mesh(f,
              with_materials=True, with_normals=True,
@@ -51,8 +72,13 @@ def getObjLayers(f=OPATH, color = [[1, 0, 0, 1]], scale=10):
 
     vertices = mesh.vertices.cpu()
     faces = mesh.faces.cpu()
+    level = 1
+
     if not len(vertices):
         return []
+    # blows memory
+    #octree, points, pyramid, prefix = mesh_to_spc(mesh.vertices, mesh.faces, level)
+    points = vertices
     """ 
     uvs_list=[mesh.uvs.cpu()],
     face_uvs_idx_list=[mesh.face_uvs_idx.cpu()],
@@ -81,7 +107,7 @@ def getObjLayers(f=OPATH, color = [[1, 0, 0, 1]], scale=10):
         layers_to_draw[0].add_lines(start, end, colorT)
 
     #sys.exit()    
-    return layers_to_draw
+    return layers_to_draw, points
 
 
 class WispApp(ABC):
@@ -133,8 +159,19 @@ class WispApp(ABC):
         self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
         # add a mesh
+        layers, points = getObjLayers()
+        # add points
+        self.points = PrimitivesPainter()
+        layers_to_draw = [PrimitivesPack()]
+        color = [[0, 0, 1, 1]]
+        colorT = torch.FloatTensor(color)   
+        for i in range(0, len(points)):
+            layers_to_draw[0].add_points(points[i], colorT)
+        self.points.redraw(layers_to_draw)
+
+        # draw mesh
         self.mesh = PrimitivesPainter()
-        self.mesh.redraw(getObjLayers())
+        self.mesh.redraw(layers)
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
@@ -452,6 +489,8 @@ class WispApp(ABC):
         # mesh
         if (self.mesh.lines):
             self.mesh.render(camera)
+        if (self.points.points):
+            self.points.render(camera)
         self.canvas_dirty = False
 
     def register_background_task(self, hook: Callable[[], None]) -> None:

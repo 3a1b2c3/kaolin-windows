@@ -58,6 +58,25 @@ class PrimitivesPack:
         self._lines_end.append(end)
         self._lines_color.append(color)
 
+
+    def add_points(self, pos: torch.Tensor, color: torch.Tensor) -> None:
+        """ Adds a single or batch of line primitives to the pack.
+
+        Args:
+            start (torch.Tensor): A tensor of (B, 3) or (3,) marking the start point of the line(s).
+            color (torch.Tensor): A tensor of (B, 4) or (4,) marking the RGB color of the line(s).
+        """
+        if pos.ndim == 1:
+            pos = pos.unsqueeze(0)
+        if color.ndim == 1:
+            color = color.unsqueeze(0)
+        self._points_pos.append(pos)
+        self._points_color.append(color)
+
+    @property
+    def points(self) -> Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+        return self._points_pos, self._points_color
+
     @property
     def lines(self) -> Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         """
