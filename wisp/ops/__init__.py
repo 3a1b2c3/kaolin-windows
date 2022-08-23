@@ -9,3 +9,5 @@
 from . import geometric
 from . import grid
 from . import test_mesh
+from . import spc_utils
+from . import spc_formatting

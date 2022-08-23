@@ -56,9 +56,10 @@ def get_obj(f=OPATH, scale=10):
     vertices = mesh.vertices.cpu()
     faces = mesh.faces.cpu()
     return vertices, faces 
+
 def points_to_layer(vertices, points_layers_to_draw, colorT):  
     for i in range(0, len(vertices)):
-        points_layers_to_draw[0].add_points(vertices[i], colorT)
+        points_layers_to_draw.add_points(vertices[i], colorT)
     return points_layers_to_draw
 
 
@@ -103,28 +104,26 @@ def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level
         points_layers_to_draw[0].add_points(vertices[i], colorT)
     return layers_to_draw, points_layers_to_draw
 
-def get_OctreeAS(f=OPATH):
+def get_OctreeAS(f=OPATH, levels=7):
     blasMesh = OctreeAS()
-    blasMesh.init_from_mesh(OPATH, 1, True, samples=1000000)
+    blasMesh.init_from_mesh(OPATH, levels, True, samples=1000000)
     return blasMesh
     #octree, points, pyramid, prefix = mesh_to_spc(mesh.vertices, mesh.faces, level)
     spc = mesh_to_spc(vertices, faces, 10)
 
     return layers_to_draw, points_layers_to_draw, spc
 
-def octree_to_layers(octreeAS, level):
-    layers_to_draw = [PrimitivesPack()]
-    print("______________octree1:", octreeAS.octree)
-    points = get_level_points_from_octree(octreeAS.octree, level)
-    print("______________octree:", points.shape)
+def octree_to_layers(octree, level, colorT, layers_to_draw=None):
+    points = get_level_points_from_octree(octree, level)
+    print("\n ___ points: ",  points[0][0][0], points.shape)
+    if layers_to_draw is None:
+        layers_to_draw = [PrimitivesPack()]
+        points_to_layer(points, layers_to_draw[0], colorT)
+    else:
+        points_to_layer(points, layers_to_draw, colorT)
     return layers_to_draw
 
 """
-
-def get_level_points_from_octree(octree, level):
-    points, pyramid, _prefix = octree_to_spc(octree)
-    return get_level_points(points, pyramid, level)
-
 'mats', 'max_level', 'octree', 'points', 'prefix', 'pyramid', 'query', 'raymarch', 'raytrace', 'texf', 'texv']
         ...max_level 1 torch.Size([9, 3])
         self.octree = octree # add mesh

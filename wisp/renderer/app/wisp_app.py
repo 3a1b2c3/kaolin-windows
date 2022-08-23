@@ -79,7 +79,7 @@ The `pyramid` field does exactly that: it keeps summarizes the number of occupie
 def getDebugCloud(dataSet, wisp_state, level=3):
     #print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
     c = dataSet.coords
-    print("c:", c)
+   # print("c:", c)
     rays = dataSet.data['rays']
     rgbs = dataSet.data["imgs"] 
     masks = dataSet.data["masks"]
@@ -88,15 +88,11 @@ def getDebugCloud(dataSet, wisp_state, level=3):
     dpoints_layers_to_draw = [PrimitivesPack()]
     points_layers_to_draw = [PrimitivesPack()]
     colorT = torch.FloatTensor([0, 1, 1, 1]) 
-    #describe_octree(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level)
-    points = get_level_points_from_octree(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level)
-    for i in range(0, len(points)): 
-        dpoints_layers_to_draw[0].add_points(points[i], colorT)
-
+    octree_to_layers(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level, colorT, dpoints_layers_to_draw[0])
 
     N = rays.origins.shape[0]
     for j in range(0, len(rays)):
-        print(rays.shape, "rays[j]", rays[j].shape)
+        # print(rays.shape, "rays[j]", rays[j].shape)
         for i in range(0, len(rays[j].origins)):
             #points.append(rays[i].origins) 
             #points_layers_to_draw[0].add_points(points[i], colorT)
@@ -237,9 +233,11 @@ class WispApp(ABC):
         self.prim_painter = PrimitivesPainter() # grid
         # add a mesh, points
         layers, points_layers_to_draw = get_obj_layers()
-        o = get_OctreeAS()
-        o_layer = octree_to_layers(o, 1)
-        print("...max_level", o.max_level, o.points.shape)
+        octreeAS = get_OctreeAS(levels=7)
+        colorT = torch.FloatTensor([0, 1, 0, 1])   
+        o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
+        # points:  torch.Size([24535, 3])
+        print("...max_level", octreeAS.max_level, octreeAS.points[0][0], octreeAS.points.shape)
 
         # add points
         self.points = PrimitivesPainter()
@@ -251,8 +249,9 @@ class WispApp(ABC):
 
         cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
         self.cloudPoints = PrimitivesPainter()
-        self.cloudPoints.redraw(cloudLayer)
-        self.cloudPoints.redraw(dpoints_layers_to_draw)
+        #self.cloudPoints.redraw(cloudLayer)
+        #self.cloudPoints.redraw(dpoints_layers_to_draw)
+        self.cloudPoints.redraw(o_layer)
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
@@ -574,8 +573,8 @@ class WispApp(ABC):
         if (self.points.points):
             self.points.render(camera)
         if (self.cloudPoints):
-            cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
-            self.cloudPoints.redraw(cloudLayer)
+            #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
+            #self.cloudPoints.redraw(cloudLayer)
             self.cloudPoints.render(camera)
         self.canvas_dirty = False
 
