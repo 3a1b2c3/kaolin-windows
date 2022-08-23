@@ -106,7 +106,7 @@ def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level
 
 def get_OctreeAS(f=OPATH, levels=7):
     blasMesh = OctreeAS()
-    blasMesh.init_from_mesh(OPATH, levels, True, samples=1000000)
+    blasMesh.init_from_mesh(OPATH, levels, True, num_samples=1000000)
     return blasMesh
     #octree, points, pyramid, prefix = mesh_to_spc(mesh.vertices, mesh.faces, level)
     spc = mesh_to_spc(vertices, faces, 10)
@@ -115,12 +115,13 @@ def get_OctreeAS(f=OPATH, levels=7):
 
 def octree_to_layers(octree, level, colorT, layers_to_draw=None):
     points = get_level_points_from_octree(octree, level)
-    print("\n ___ points: ",  points[0][0][0], points.shape)
-    if layers_to_draw is None:
-        layers_to_draw = [PrimitivesPack()]
-        points_to_layer(points, layers_to_draw[0], colorT)
-    else:
-        points_to_layer(points, layers_to_draw, colorT)
+    if points:
+        print("\n ___ points: ",  points.shape)
+        if layers_to_draw is None:
+            layers_to_draw = [PrimitivesPack()]
+            points_to_layer(points, layers_to_draw[0], colorT)
+        else:
+            points_to_layer(points, layers_to_draw, colorT)
     return layers_to_draw
 
 """

@@ -48,13 +48,14 @@ def pointcloud_to_octree(pointcloud, level, attributes=None, dilate=0):
     return octree
 
 
-def mesh_to_spc(vertices, faces, level, samples=1000000):
+def mesh_to_spc(vertices, faces, level, num_samples=100000000):
     """Construct SPC from a mesh.
 
     Args:
         vertices (torch.FloatTensor): Vertices of shape [V, 3]
         faces (torch.LongTensor): Face indices of shape [F, 3]
         level (int): The level of the octree
+        num_samples (int): The number of samples to be generated on the mesh surface.
 
     Returns:
         (torch.ByteTensor, torch.ShortTensor, torch.LongTensor, torch.BoolTensor):
@@ -63,7 +64,8 @@ def mesh_to_spc(vertices, faces, level, samples=1000000):
         - pyramid
         - prefix
     """
-    octree = mesh_to_octree(vertices, faces, level, samples)
+    octree = mesh_to_octree(vertices, faces, level, num_samples)
+
     points, pyramid, prefix = octree_to_spc(octree)
     return octree, points, pyramid, prefix
 
@@ -86,19 +88,20 @@ def octree_to_spc(octree):
     pyramid = pyramid[0]
     return points, pyramid, prefix
 
-
-def mesh_to_octree(vertices, faces, level, meshSamples=1000000):
+def mesh_to_octree(vertices, faces, level, num_samples=100000000):
     """Construct an octree from a mesh.
 
     Args:
         vertices (torch.FloatTensor): Vertices of shape [V, 3]
         faces (torch.LongTensor): Face indices of shape [F, 3]
         level (int): The level of the octree
+        num_samples (int): The number of samples to be generated on the mesh surface.
 
     Returns:
         (torch.ByteTensor): the octree tensor
     """
-    samples = mesh_ops.sample_surface(vertices.cuda(), faces.cuda(), meshSamples)[0]
+    samples = mesh_ops.sample_surface(vertices.cuda(), faces.cuda(), num_samples)[0]
+
     # Augment samples... may be a hack that isn't actually needed
     samples = torch.cat([samples,
         samples + (torch.rand_like(samples) * 2.0 - 1.0) * (1.0/(2**(level+1)))], dim=0)

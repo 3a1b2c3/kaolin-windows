@@ -133,7 +133,7 @@ class HashGrid(BLASGrid):
     
         ############ here
         blasMesh = OctreeAS()
-        blasMesh.init_from_mesh(OPATH, 1, True, samples=1000000)
+        blasMesh.init_from_mesh(OPATH, 1, True, num_samples=1000000)
         self.blas = OctreeAS()
         # pointcloud_to_octree(pointcloud, level, attributes=None, dilate=0):
         self.blas.init_dense(self.blas_level)

@@ -88,7 +88,7 @@ def getDebugCloud(dataSet, wisp_state, level=3):
     dpoints_layers_to_draw = [PrimitivesPack()]
     points_layers_to_draw = [PrimitivesPack()]
     colorT = torch.FloatTensor([0, 1, 1, 1]) 
-    octree_to_layers(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level, colorT, dpoints_layers_to_draw[0])
+    #octree_to_layers(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level, colorT, dpoints_layers_to_draw[0])
 
     N = rays.origins.shape[0]
     for j in range(0, len(rays)):
@@ -235,7 +235,7 @@ class WispApp(ABC):
         layers, points_layers_to_draw = get_obj_layers()
         octreeAS = get_OctreeAS(levels=7)
         colorT = torch.FloatTensor([0, 1, 0, 1])   
-        o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
+        #o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
         # points:  torch.Size([24535, 3])
         print("...max_level", octreeAS.max_level, octreeAS.points[0][0], octreeAS.points.shape)
 
@@ -248,10 +248,10 @@ class WispApp(ABC):
         self.mesh.redraw(layers)
 
         cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
-        self.cloudPoints = PrimitivesPainter()
+        #self.cloudPoints = PrimitivesPainter()
         #self.cloudPoints.redraw(cloudLayer)
         #self.cloudPoints.redraw(dpoints_layers_to_draw)
-        self.cloudPoints.redraw(o_layer)
+        #self.cloudPoints.redraw(o_layer)
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
