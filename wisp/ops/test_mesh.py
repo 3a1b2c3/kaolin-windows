@@ -19,6 +19,7 @@ from kaolin.io import obj
 
 from wisp.core.primitives import PrimitivesPack
 from wisp.ops.spc.conversions import mesh_to_spc, mesh_to_octree
+from wisp.accelstructs import OctreeAS
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../data/test/obj/1.obj"))
 
@@ -54,7 +55,6 @@ def get_obj(f=OPATH, scale=10):
     vertices = mesh.vertices.cpu()
     faces = mesh.faces.cpu()
     return vertices, faces 
-
 
         
 def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level=10):
@@ -100,3 +100,10 @@ def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level
     spc = mesh_to_spc(vertices, faces, 10)
 
     return layers_to_draw, points_layers_to_draw, spc
+
+def get_OctreeAS(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level=10):
+    blasMesh = OctreeAS()
+    blasMesh.init_from_mesh(OPATH, 1, True, samples=1000000)
+    return blasMesh
+
+
