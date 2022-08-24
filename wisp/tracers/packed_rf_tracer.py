@@ -156,7 +156,7 @@ class PackedRFTracer(BaseTracer):
         rgb[ridx_hit.long(), :3] = color
         
         timer.check("Composit")
-        print(rgb[0], "________[ridx_hit:" ,ridx_hit[0], raymarch_type)
+        #print(rgb[0], "________[ridx_hit:" ,ridx_hit[0], raymarch_type)
         return RenderBuffer(depth=depth, hit=hit, rgb=rgb, alpha=out_alpha)#, samples
 
 '''

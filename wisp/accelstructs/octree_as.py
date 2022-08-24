@@ -48,7 +48,7 @@ class OctreeAS(object):
         self.V, self.F = mesh_ops.normalize(self.V, self.F, 'sphere')
 
         # Note: This function is not deterministic since it relies on sampling.
-        #       Eventually this will be replaced by 3D rasterization.
+        #       Eventually this will be replaced by 3D rasterization.git add 
         octree = wisp_spc_ops.mesh_to_octree(self.V, self.F, level, num_samples)
 
         self.init(octree)
@@ -99,8 +99,7 @@ class OctreeAS(object):
         Returns:
             (void): Will initialize the OctreeAS object.
         """
-        print("___init")
-        self.octree = octree # add mesh
+        self.octree = octree
         self.points, self.pyramid, self.prefix = wisp_spc_ops.octree_to_spc(self.octree)
         self.initialized = True
         self.max_level = self.pyramid.shape[-1] - 2

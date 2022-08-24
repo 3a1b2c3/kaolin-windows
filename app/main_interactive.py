@@ -44,8 +44,6 @@ if __name__ == "__main__":
                                         trainer_step_func=trainer.iterate,
                                         experiment_name="wisp trainer",
                                         dataset=train_dataset)
-        print("_________self.dataset:: ",  train_dataset.data.keys())
-        #sys.exit()
         renderer.run()
     else:
         log.info("Running headless. For the app, set WISP_HEADLESS=0")
