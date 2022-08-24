@@ -11,21 +11,23 @@ import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
 import logging as log
-import time
-import math
+import os
 
 from wisp.utils import PsDebugger, PerfTimer
 from wisp.ops.spc import sample_spc
 
-import wisp.ops.spc as wisp_spc_ops
 import wisp.ops.grid as grid_ops
 
 from wisp.models.grids import BLASGrid
 from wisp.models.decoders import BasicDecoder
 
-import kaolin.ops.spc as spc_ops
-
+from kaolin.ops.spc.points import points_to_morton, morton_to_points, unbatched_points_to_octree
+from kaolin.rep.spc import Spc
+from kaolin.ops.spc import points_to_morton, morton_to_points, unbatched_points_to_octree, unbatched_get_level_points
 from wisp.accelstructs import OctreeAS
+
+OPATH = os.path.normpath(os.path.join(__file__, "../../../../data/test/obj/1.obj"))
+
 '''
 # indexing by masking follow naturally the morton order
 What is Morton Order (Z-Order, Lebesgue Curve)
@@ -36,6 +38,56 @@ of shape :math:`(\text{num_points})`.
 // with the occupied positions.
 
 '''
+def test(level, features):
+    # Avoid duplications if cells occupy more than one point
+    unique, unique_keys, unique_counts = torch.unique(points.contiguous(), dim=0,
+                                                      return_inverse=True, return_counts=True)
+
+    # Create octree hierarchy
+    morton, keys = torch.sort(points_to_morton(unique.contiguous()).contiguous())
+    points = morton_to_points(morton.contiguous())
+    octree = unbatched_points_to_octree(points, level, sorted=True)
+
+    # Organize features for octree leaf nodes
+    feat = None
+    if features is not None:
+        # Feature collision of multiple points sharing the same cell is consolidated here.
+        # Assumes mean averaging
+        feat_dtype = features.dtype
+        is_fp = features.is_floating_point()
+
+        # Promote to double precision dtype to avoid rounding errors
+        feat = torch.zeros(unique.shape[0], features.shape[1], device=features.device).double()
+        feat = feat.index_add_(0, unique_keys, features.double()) / unique_counts[..., None].double()
+        if not is_fp:
+            feat = torch.round(feat)
+        feat = feat.to(feat_dtype)
+        feat = feat[keys]
+
+    # A full SPC requires octree hierarchy + auxilary data structures
+    lengths = torch.tensor([len(octree)], dtype=torch.int32)   # Single entry batch
+    return Spc(octrees=octree, lengths=lengths, features=feat)
+
+
+def mergeOctrees(points_hierarchy1, points_hierarchy2, pyramid1, pyramid2,
+            features1, features2, level):
+
+    points1 = points_hierarchy1[pyramid1[-1, 1]:pyramid1[-1, 1] + pyramid1[-1, 0]]
+    points2 = points_hierarchy2[pyramid2[-1, 1]:pyramid2[-1, 1] + pyramid2[-1, 0]]
+    all_points = torch.cat([points_hierarchy1, points_hierarchy2], dim=0)
+    unique, unique_keys, unique_counts = torch.unique(all_points.contiguous(), dim=0,
+                                                                                        return_inverse=True, return_counts=True)
+    morton, keys = torch.sort(points_to_morton(unique.contiguous()).contiguous())
+    points = morton_to_points(morton.contiguous())
+    merged_octree = unbatched_points_to_octree(points, level, sorted=True)
+
+    all_features = torch.cat([features1, features2], dim=0)
+    feat = torch.zeros(unique.shape[0], all_features.shape[1], device=all_features.device).double()
+    # Here we just do an average when both octrees have features on the same coordinate
+    feat = feat.index_add_(0, unique_keys, all_features.double()) / unique_counts[..., None].double()
+    feat = feat.to(all_features.dtype)
+    merged_features = feat[keys]
+    return merged_octree, merged_features
 
 class HashGrid(BLASGrid):
     """This is a feature grid where the features are defined in a codebook that is hashed.
@@ -48,7 +100,7 @@ class HashGrid(BLASGrid):
         feature_std        : float = 0.0,
         feature_bias       : float = 0.0,
         codebook_bitwidth  : int   = 16,
-        blas_level         : int   = 7,  # octree
+        blas_level         : int   = 7, # octree
         **kwargs
     ):
         """Initialize the hash grid class.
@@ -79,11 +131,16 @@ class HashGrid(BLASGrid):
 
         self.kwargs = kwargs
     
+        ############ here
+        blasMesh = OctreeAS()
+        blasMesh.init_from_mesh(OPATH, 1, True, num_samples=1000000)
         self.blas = OctreeAS()
+        # pointcloud_to_octree(pointcloud, level, attributes=None, dilate=0):
         self.blas.init_dense(self.blas_level)
-        self.dense_points = spc_ops.unbatched_get_level_points(self.blas.points, self.blas.pyramid, self.blas_level).clone()
+        #    return point_hierarchy[pyramid[1, level]:pyramid[1, level + 1]]
+        self.dense_points = unbatched_get_level_points(self.blas.points, self.blas.pyramid, self.blas_level).clone()
         self.num_cells = self.dense_points.shape[0]
-        self.occupancy = torch.ones(self.num_cells) * 20.0
+        self.occupancy = torch.ones(self.num_cells) * 20.0 #check pyramide
 
     def init_from_octree(self, base_lod, num_lods):
         """Builds the multiscale hash grid with an octree sampling pattern.
@@ -92,7 +149,7 @@ class HashGrid(BLASGrid):
         resolutions = [2**lod for lod in octree_lods]
         self.init_from_resolutions(resolutions)
 
-    def init_from_geometric(self, min_width, max_width, num_lods):
+    def init_from_geometric(self, min_width, max_width, num_lods, vertices=None, faces=None):
         """Build the multiscale hash grid with a geometric sequence.
 
         This is an implementation of the geometric multiscale grid from 
@@ -102,9 +159,9 @@ class HashGrid(BLASGrid):
         """
         b = np.exp((np.log(max_width) - np.log(min_width)) / num_lods) 
         resolutions = [int(np.floor(min_width*(b**l))) for l in range(num_lods)]
-        self.init_from_resolutions(resolutions)
+        self.init_from_resolutions(resolutions, vertices, faces)
     
-    def init_from_resolutions(self, resolutions):
+    def init_from_resolutions(self, resolutions, vertices=None, faces=None):
         """Build a multiscale hash grid from a list of resolutions.
         """
         self.resolutions = resolutions
@@ -143,6 +200,8 @@ class HashGrid(BLASGrid):
 
         batch, num_samples, _ = coords.shape
         
+        #print("coords.shape1 ", coords.shape,  coords[0][0])
+        # coords.shape1  torch.Size([840, 1, 3]) tensor([[ 0.7880, -0.9838,  0.9873]], device='cuda:0')
         feats = grid_ops.hashgrid(coords, self.resolutions, self.codebook_bitwidth, lod_idx, self.codebook)
 
         if self.multiscale_type == 'cat':
