@@ -32,11 +32,13 @@ import kaolin.ops.spc as spc_ops
 class NeuralRadianceField(BaseNeuralField):
     """Model for encoding radiance fields (density and plenoptic color)
     """
+    features = None
     def init_embedder(self):
         """Creates positional embedding functions for the position and view direction.
         """
         self.pos_embedder, self.pos_embed_dim = get_positional_embedder(self.pos_multires, 
-                                                                       self.embedder_type == "positional")
+                                                                       self.embedder_type == "positional")#UNUSED
+                                                                
         self.view_embedder, self.view_embed_dim = get_positional_embedder(self.view_multires, 
                                                                          self.embedder_type == "positional")
         log.info(f"Position Embed Dim: {self.pos_embed_dim}")
@@ -77,7 +79,7 @@ class NeuralRadianceField(BaseNeuralField):
                                base_lod=self.base_lod, num_lods=self.num_lods,
                                interpolation_type=self.interpolation_type, multiscale_type=self.multiscale_type,
                                **self.kwargs)
-
+    #unused
     def prune(self):
         """Prunes the blas based on current state.
         """
@@ -89,6 +91,7 @@ class NeuralRadianceField(BaseNeuralField):
                 density_decay = 0.6
                 min_density = ((0.01 * 512)/np.sqrt(3))
 
+                print("________prune")
                 self.grid.occupancy = self.grid.occupancy.cuda()
                 self.grid.occupancy = self.grid.occupancy * density_decay
                 points = self.grid.dense_points.cuda()
@@ -129,6 +132,8 @@ class NeuralRadianceField(BaseNeuralField):
         """
         self._register_forward_function(self.rgba, ["density", "rgb"])
 
+    #len(ray_d) == len( coords)
+    # put real features in coodebook?
     def rgba(self, coords, ray_d, pidx=None, lod_idx=None):
         """Compute color and density [particles / vol] for the provided coordinates.
 
@@ -150,8 +155,10 @@ class NeuralRadianceField(BaseNeuralField):
         batch, num_samples, _ = coords.shape
         timer.check("rf_rgba_preprocess")
         
-        # Embed coordinates into high-dimensional vectors with the grid.
+        # Embed coordinates into high-dimensional vectors with the grid.  HashGrid
         feats = self.grid.interpolate(coords, lod_idx).reshape(-1, self.effective_feature_dim)
+        print(feats.shape, "self.effective_feature_dim: ", self.effective_feature_dim)
+        self.features = feats
         timer.check("rf_rgba_interpolate")
 
         # Optionally concat the positions to the embedding, and also concatenate embedded view directions.
@@ -159,9 +166,10 @@ class NeuralRadianceField(BaseNeuralField):
             fdir = torch.cat([feats,
                 self.pos_embedder(coords.reshape(-1, 3)),
                 self.view_embedder(-ray_d)[:,None].repeat(1, num_samples, 1).view(-1, self.view_embed_dim)], dim=-1)
-        else: 
+        else: #
             fdir = torch.cat([feats,
                 self.view_embedder(-ray_d)[:,None].repeat(1, num_samples, 1).view(-1, self.view_embed_dim)], dim=-1)
+            print(lod_idx, "___ray_d:", len(ray_d), len( coords))
         timer.check("rf_rgba_embed_cat")
         
         # Decode high-dimensional vectors to RGBA.

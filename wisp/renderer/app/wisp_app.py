@@ -35,7 +35,7 @@ from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSc
 from wisp.ops.spc.conversions import mesh_to_spc
 #from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
 
-from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid
+from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid, get_features_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
 
@@ -234,13 +234,21 @@ class WispApp(ABC):
         # add a mesh, points
         layers, points_layers_to_draw = get_obj_layers()
         octreeAS = get_OctreeAS(levels=7)
+        h = get_HashGrid()
+        f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
+        print(octreeAS.points.shape, " __octreeAS.points ")#,  batch, num_samples )
         colorT = torch.FloatTensor([0, 1, 0, 1])   
         #o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
         # points:  torch.Size([24535, 3])
-        print("...max_level", octreeAS.max_level, octreeAS.points[0][0], octreeAS.points.shape)
+        print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
+
+
 
         # add points
         self.points = PrimitivesPainter()
+        nef = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
+        if nef.features:
+            print(nef.features.shape, "__________nef.features: ", nef.features)
         self.points.redraw(points_layers_to_draw)
 
         # draw mesh
