@@ -246,9 +246,7 @@ class WispApp(ABC):
 
         # add points
         self.points = PrimitivesPainter()
-        nef = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
-        if nef.features:
-            print(nef.features.shape, "__________nef.features: ", nef.features)
+ 
         self.points.redraw(points_layers_to_draw)
 
         # draw mesh
@@ -575,6 +573,14 @@ class WispApp(ABC):
         for gizmo in self.gizmos.values():
             gizmo.render(camera)
         self.prim_painter.render(camera)
+
+        # after training
+        nef = self.wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
+        if nef.features.size:
+            print(nef.features.shape, "__________nef.features: ")#torch.Size([42, 32]) 0,1
+        else:
+            print("no features")
+
         # mesh
         if (self.mesh.lines):
             self.mesh.render(camera)
