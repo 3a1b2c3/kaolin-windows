@@ -70,6 +70,10 @@ class PrimitivesPainter(Gizmo):
         # TODO (operel): gpu copy is better..
         pos, color = points
         count = len(pos)
+<<<<<<< HEAD
+=======
+        print("len(pos)", len(pos))
+>>>>>>> cc8ac3e1dc66851c6debbea4189ab48e51a13ec6
         vertex_buffer = np.zeros(count, [("position", np.float32, 3), ("color", np.float32, 4)])
         vertex_buffer["position"] = torch.cat(pos).cpu().numpy()
         vertex_buffer["color"] = torch.cat(color).reshape(-1, 4).cpu().numpy()
