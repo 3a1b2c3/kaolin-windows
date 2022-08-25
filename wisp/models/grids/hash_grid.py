@@ -40,6 +40,7 @@ of shape :math:`(\text{num_points})`.
 class HashGrid(BLASGrid):
     """This is a feature grid where the features are defined in a codebook that is hashed.
     """
+    features = None
 
     def __init__(self, 
         feature_dim        : int,
@@ -128,6 +129,7 @@ class HashGrid(BLASGrid):
         """
         self.codebook.requires_grad_(False)
 
+    # returns features
     def interpolate(self, coords, lod_idx, pidx=None):
         """Query multiscale features.
 
@@ -144,7 +146,7 @@ class HashGrid(BLASGrid):
         batch, num_samples, _ = coords.shape
         print(self.multiscale_type, coords.shape, "__batch, num_samples", batch, num_samples)
         feats = grid_ops.hashgrid(coords, self.resolutions, self.codebook_bitwidth, lod_idx, self.codebook)
-
+        self.features = feats
         if self.multiscale_type == 'cat':
             print( "__batch, num_samples", feats.reshape(batch, num_samples, -1).shape)
             return feats.reshape(batch, num_samples, -1)
