@@ -116,7 +116,7 @@ class PackedRFTracer(BaseTracer):
         ridx_hit = ridx[spc_render.mark_pack_boundaries(ridx.int())]
         
         # Compute the color and density for each ray and their samples
-        # calls .rgb() functions
+        # calls     def rgba(self, coords, ray_d, pidx=None, lod_idx=None):
         color, density = nef(coords=samples, ray_d=rays.dirs.index_select(0, ridx), pidx=pidx, lod_idx=lod_idx,
                              channels=["rgb", "density"])
         #torch.Size([1699]) 16384  __color, density torch.Size([5441, 1, 3]) torch.Size([5441, 1, 1])
