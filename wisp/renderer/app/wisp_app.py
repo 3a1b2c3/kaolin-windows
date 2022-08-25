@@ -35,7 +35,7 @@ from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSc
 from wisp.ops.spc.conversions import mesh_to_spc
 #from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
 
-from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers
+from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
 

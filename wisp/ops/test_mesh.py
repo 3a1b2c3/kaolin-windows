@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 from contextlib import contextmanager
-import os
+import os, sys
 
 import torch
 
@@ -20,7 +20,10 @@ from kaolin.io import obj
 from wisp.core.primitives import PrimitivesPack
 from wisp.ops.spc.conversions import mesh_to_spc#, mesh_to_octree
 from wisp.accelstructs import OctreeAS
+from wisp.models.grids.hash_grid import HashGrid
+from wisp.models.nefs.nerf import NeuralRadianceField
 from .spc_utils import get_level_points_from_octree
+
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../data/test/obj/1.obj"))
 
@@ -104,6 +107,7 @@ def get_obj_layers(f=OPATH, color = [[1, 0, 0, 1], [0, 0, 1, 1]], scale=1, level
         points_layers_to_draw[0].add_points(vertices[i], colorT)
     return layers_to_draw, points_layers_to_draw
 
+
 def get_OctreeAS(f=OPATH, levels=7):
     blasMesh = OctreeAS()
     blasMesh.init_from_mesh(OPATH, levels, True, num_samples=1000000)
@@ -112,6 +116,87 @@ def get_OctreeAS(f=OPATH, levels=7):
     spc = mesh_to_spc(vertices, faces, 10)
 
     return layers_to_draw, points_layers_to_draw, spc
+
+#        feature_dim      : int   = 16,            feature_dim (int): The dimension of the features stored on the grid.
+def get_HashGrid(max_grid_res=16, num_lods=16):
+    h = HashGrid(16)
+    # pipeline.nef.grid.init_from_geometric(16, args.max_grid_res, args.num_lods)
+    h.init_from_geometric(16, max_grid_res, num_lods)
+    #feats  = h.interpolate(coords, lod_idx, pidx=None)
+    #feats = h.grid.interpolate(coords, lod_idx)#.reshape(-1, self.effective_feature_dim)
+    #h.init_from_octree(base_lod, num_lods)
+    return h
+
+"""
+    def rgba(self, coords, ray_d, pidx=None, lod_idx=None):
+        Compute color and density [particles / vol] for the provided coordinates.
+
+        Args:
+            coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3]
+            ray_d (torch.FloatTensor): packed tensor of shape [batch, 3]
+            pidx (torch.LongTensor): SPC point_hierarchy indices of shape [batch].
+                                     Unused in the current implementation.
+            lod_idx (int): index into active_lods. If None, will use the maximum LOD.
+        
+        Returns:
+            {"rgb": torch.FloatTensor, "density": torch.FloatTensor}:
+                - RGB tensor of shape [batch, num_samples, 3] 
+            
+
+
+>>> a = torch.arange(4.)
+>>> torch.reshape(a, (2, 2))
+tensor([[ 0.,  1.],
+        [ 2.,  3.]])
+>>> b = torch.tensor([[0, 1], [2, 3]])
+>>> torch.reshape(b, (-1,))
+tensor([ 0,  1,  2,  3])
+THCudaTensor_resize2d(tensor, oH, oW);
+THCudaTensor_resize3d(tensor, 1, oH, oW); // no copy
+THCudaTensor_resize2d(tensor, 1, oH*oW); // copy!
+    example_2D_list = [
+        [[ 0.9266, -0.9980,  0.9962]],
+        [[ 0.9465, -0.9803,  0.9978]],
+        [[ 0.9946, -0.9445,  0.9856]]
+    ]
+
+    coords = torch.tensor(example_2D_list)
+    # __batch, num_samples 3 1
+            coords (torch.FloatTensor): 3D coordinates of shape [batch, num_samples, 3]
+b = a.unsqueeze(0) # adds one extra dimension of extent 1
+If you add at the 1 position, it will be (3,1), which means 3 rows and 1 column.
+<becomes 1 x 3 x326 x 326
+    a.view(1,5)
+    .unsqueeze(0) # adds one extra dimension of extent 1
+    torch.Size([141467, 1, 3])  _1_batch, num_samples  141467 1
+torch.Size([141467, 1, 3]) __batch, num_samples 141467 1 WPORKIN
+
+"""
+def get_features_HashGrid(coords, hashGrid, lod_idx=15):
+    coords = coords[:100] #540
+    print("before", coords.shape)
+    coords = coords.reshape(2, 50, 3)
+    batch, num_samples, _ = coords.shape
+    print( batch, " batch: ", num_samples, "after",  coords.shape)
+    #torch.Size([273, 1, 3]) __batch, num_samples 273 1
+    #torch.Size([1, 141712, 3]) actual  1 141712
+
+
+    batch, num_samples, _ = coords.shape
+    print(coords.shape, " _1_batch, num_samples ",  batch, num_samples )      
+    #feats = hashGrid.interpolate(coords, lod_idx, pidx=None)
+    #feats = h.grid.interpolate(coords, lod_idx)#.reshape(-1, self.effective_feature_dim)
+    #h.init_from_octree(base_lod, num_lods)
+    # len( coords),len( ray_d)
+    #    def rgba(self, coords, ray_d, pidx=None, lod_idx=None):
+    hashGrid.freeze()
+    #return feats
+
+
+def get_NeuralRadianceField(f=OPATH, base_lod=1, num_lods=7):
+    n = NeuralRadianceField()
+    #def rgba(self, coords, ray_d, pidx=None, lod_idx=None):
+    return n
 
 def octree_to_layers(octree, level, colorT, layers_to_draw=None):
     points = get_level_points_from_octree(octree, level)
