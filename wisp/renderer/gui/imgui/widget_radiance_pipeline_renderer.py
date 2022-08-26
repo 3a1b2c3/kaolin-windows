@@ -53,7 +53,7 @@ class WidgetNeuralRadianceFieldRenderer(WidgetImgui):
             imgui.same_line()
             imgui.text(f"{renderer.acceleration_structure()}")
             imgui.text(f"Active LOD to render: ")
-            changed, self.lod = imgui.core.slider_int(f"##lod", value=self.lo,
+            changed, self.lod = imgui.core.slider_int(f"##lod", value=self.lod,
                                                            min_value=0, max_value=15)
             if imgui.tree_node("Tracer", imgui.TREE_NODE_DEFAULT_OPEN):
                 MAX_SAMPLES = 128               # For general tracers
@@ -107,6 +107,7 @@ class WidgetNeuralRadianceFieldRenderer(WidgetImgui):
                 imgui.tree_pop()
 
             if renderer.nef is not None:
+                #self.lod 
                 pipeline = renderer.nef
                 pipeline_name = type(pipeline).__name__
                 pipeline_widget = self.get_pipeline_widget(pipeline_name)
