@@ -40,7 +40,7 @@ class MultiviewTrainer(BaseTrainer):
         self.log_dict['rgb_loss'] = 0.0
         self.log_dict['image_count'] = 0
 
-    def step(self, epoch, n_iter, data):
+    def step(self, epoch, n_iter, data, lod_idx = None):
         """Implement the optimization over image-space loss.
         """
         self.scene_state.optimization.iteration = n_iter
@@ -66,7 +66,7 @@ class MultiviewTrainer(BaseTrainer):
             weights = [2**i for i in range(self.pipeline.nef.num_lods)]
             weights = [i/sum(weights) for i in weights]
             lod_idx = random.choices(population, weights)[0]
-        else:
+        elif lod_idx is None:
             # Sample only the max lod (None is max lod by default)
             lod_idx = None
 
@@ -98,7 +98,7 @@ class MultiviewTrainer(BaseTrainer):
         self.log_dict['total_loss'] /= self.log_dict['total_iter_count']
         log_text += ' | total loss: {:>.3E}'.format(self.log_dict['total_loss'])
         self.log_dict['rgb_loss'] /= self.log_dict['total_iter_count']
-        log_text += ' | rgb loss: {:>.3E}'.format(self.log_dict['rgb_loss'])
+        log_text += ' |mv rgb loss: {:>.3E}'.format(self.log_dict['rgb_loss'])
         
         for key in self.log_dict:
             if 'loss' in key:
