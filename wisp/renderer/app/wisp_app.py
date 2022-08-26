@@ -648,7 +648,7 @@ class WispApp(ABC):
         self.prim_painter.render(camera)
 
         # after training
-        if ('test-ngp-nerf-interactive'  in self.wisp_state.graph.neural_pipeline):
+        if (hasattr(self.wisp_state.graph, 'neural_pipeline') and 'test-ngp-nerf-interactive'  in self.wisp_state.graph.neural_pipeline):
             nef = self.wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
             ''' 
             if nef.features.size:
