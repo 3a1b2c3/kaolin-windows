@@ -288,7 +288,7 @@ class WispApp(ABC):
         #o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
         # points:  torch.Size([24535, 3])
         print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
-        sys.exit()
+        #sys.exit()
 
         # add points
         self.points = PrimitivesPainter()
@@ -299,7 +299,7 @@ class WispApp(ABC):
         self.mesh = PrimitivesPainter()
         self.mesh.redraw(layers)
 
-        cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
+        #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
         #self.cloudPoints = PrimitivesPainter()
         #self.cloudPoints.redraw(cloudLayer)
         #self.cloudPoints.redraw(dpoints_layers_to_draw)
@@ -648,12 +648,14 @@ class WispApp(ABC):
         self.prim_painter.render(camera)
 
         # after training
-        nef = self.wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
-        if nef.features.size:
-            print(nef.features.shape, "__________nef.features: ")#torch.Size([42, 32]) 0,1
-        else:
-            print("no features")
-
+        if ('test-ngp-nerf-interactive'  in self.wisp_state.graph.neural_pipeline):
+            nef = self.wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
+            ''' 
+            if nef.features.size:
+                print(nef.features.shape, "__________nef.features: ")#torch.Size([42, 32]) 0,1
+            else:
+                print("no features")
+            '''
         # mesh
         if (self.mesh.lines):
             self.mesh.render(camera)
