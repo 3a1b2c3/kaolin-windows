@@ -308,12 +308,7 @@ class WispApp(ABC):
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
 
-<<<<<<< HEAD
-
-        self.redraw()
-=======
         self.redraw()   # Refresh RendererCore
->>>>>>> main
 
     def init_wisp_state(self, wisp_state: WispState) -> None:
         """ A hook for applications to initialize specific fields inside the wisp state object.
