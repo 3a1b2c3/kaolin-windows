@@ -182,11 +182,10 @@ def getDebugCloud(dataSet, wisp_state, level=3):
 """
 
 class WispApp(ABC):
-<<<<<<< HEAD
     dataset = None
     mesh = None
     cloudPoints = None
-=======
+
     """ WispApp is a base app implementation which takes care of the entire lifecycle of the rendering loop:
     this is the infinite queue of events which includes: handling of IO and OS events, rendering frames and running
     backgrounds tasks, i.e. optimizations.
@@ -232,7 +231,6 @@ class WispApp(ABC):
     Customizing the app behaviour should always be preferred via the initialization hooks.
     """
 
->>>>>>> main
     # Period of time between user interactions before resetting back to full resolution mode
     COOLDOWN_BETWEEN_RESOLUTION_CHANGES = 0.35  # In seconds
 
