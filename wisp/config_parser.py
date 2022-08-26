@@ -158,7 +158,7 @@ def parse_options(return_parser=False):
                             help='Sample the normals.')
     data_group.add_argument('--num-samples', type=int, default=100000,
                             help='Number of samples per mode (or per epoch for SPC)')
-    data_group.add_argument('--num-samples-on-mesh', type=int, default=100000000,
+    data_group.add_argument('--num-samples-on-mesh', type=int, default=1000000,
                             help='Number of samples generated on mesh surface to initialize occupancy structures')
     data_group.add_argument('--sample-tex', action='store_true',
                             help='Sample textures')
