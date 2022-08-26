@@ -246,6 +246,7 @@ class WispApp(ABC):
 
         # Initialize gui, assumes the window is managed by glumpy with glfw
         imgui.create_context()
+        self.lod_idx = None
         self._is_imgui_focused = False
         self._is_imgui_hovered = False
         self._is_reposition_imgui_menu = True
@@ -287,8 +288,7 @@ class WispApp(ABC):
         #o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
         # points:  torch.Size([24535, 3])
         print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
-
-
+        sys.exit()
 
         # add points
         self.points = PrimitivesPainter()
@@ -325,16 +325,11 @@ class WispApp(ABC):
         """
         return [WidgetGPUStats(), WidgetRendererProperties(), WidgetSceneGraph()]
 
-<<<<<<< HEAD
-    def create_gizmos(self, data=None) -> Dict[str, Gizmo]:
-        """ Override to define which gizmos are used by the wisp app. """
-=======
     def create_gizmos(self) -> Dict[str, Gizmo]:
         """ Override to define which gizmos are painted on the canvas by the wisp app.
         Gizmos are transient rasterized objects rendered by OpenGL on top of the canvas.
         For example: world grid, axes painter.
         """
->>>>>>> main
         gizmos = dict()
         planes = self.wisp_state.renderer.reference_grids
         axes = set(''.join(planes))

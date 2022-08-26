@@ -26,7 +26,7 @@ from .spc_utils import get_level_points_from_octree
 
 
 OPATH = os.path.normpath(os.path.join(__file__, "../../../data/test/obj/1.obj"))
-
+OPATH = os.path.normpath(r"D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj")
 '''
 kaolin-wisp\wisp\ops\spc\conversions.py
 def mesh_to_spc(vertices, faces, level):
