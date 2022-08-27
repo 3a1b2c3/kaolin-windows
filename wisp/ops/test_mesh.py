@@ -177,7 +177,7 @@ def get_features_HashGrid(coords, hashGrid, lod_idx=15):
     print("before", coords.shape)
     coords = coords.reshape(2, 50, 3)
     batch, num_samples, _ = coords.shape
-    print( batch, " batch: ", num_samples, "after",  coords.shape)
+    #print( batch, " batch: ", num_samples, "after",  coords.shape)
     #torch.Size([273, 1, 3]) __batch, num_samples 273 1
     #torch.Size([1, 141712, 3]) actual  1 141712
 

@@ -55,6 +55,7 @@ class WidgetNeuralRadianceFieldRenderer(WidgetImgui):
             imgui.text(f"Active LOD to render: ")
             changed, self.lod = imgui.core.slider_int(f"##lod", value=self.lod,
                                                            min_value=0, max_value=15)
+            renderer.lod_idx = self.lod
             if imgui.tree_node("Tracer", imgui.TREE_NODE_DEFAULT_OPEN):
                 MAX_SAMPLES = 128               # For general tracers
                 MAX_SAMPLES_RAY_MODE = 512      # For 'ray' sampling mode
