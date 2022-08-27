@@ -298,6 +298,8 @@ class WispApp(ABC):
         # draw mesh
         self.mesh = PrimitivesPainter()
         self.mesh.redraw(layers)
+        self.wisp_state.debug['wireframe'] = True
+        self.wisp_state.debug['points'] = False
 
         #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
         #self.cloudPoints = PrimitivesPainter()
@@ -657,9 +659,9 @@ class WispApp(ABC):
                 print("no features")
             '''
         # mesh
-        if (self.mesh.lines):
+        if (self.mesh.lines and self.wisp_state.debug.get('wireframe')):
             self.mesh.render(camera)
-        if (self.points.points):
+        if (self.points.points and self.wisp_state.debug.get('points')):
             self.points.render(camera)
         if (self.cloudPoints):
             #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)

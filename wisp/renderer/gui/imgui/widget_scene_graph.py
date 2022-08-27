@@ -58,11 +58,12 @@ class WidgetSceneGraph(WidgetImgui):
 
     @staticmethod
     def paint_object_debug_checkbox(state, obj_id):
-        visible_objects = state.graph.visible_objects
+        visible_objects = state.debug
         is_checked = True
         obj_id == 'wireframe'
-        visibility_toggled, is_checked = imgui.checkbox("DEBUG mesh as " + obj_id, is_checked)
-        visible_objects[obj_id] = is_checked
+        print("obj_id in state.debug : ", obj_id, obj_id in state.debug)
+        visibility_toggled, is_checked = imgui.checkbox("DEBUG mesh as " + visible_objects[obj_id], is_checked)
+        state.debug[obj_id] = is_checked
         if visibility_toggled:
             request_redraw(state)
 

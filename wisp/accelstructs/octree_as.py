@@ -22,7 +22,7 @@ class OctreeAS(object):
     def __init__(self):
         self.initialized = False
 
-    def init_from_mesh(self, mesh_path, level, sample_tex=False, num_samples=100000000):
+    def init_from_mesh(self, mesh_path, level, sample_tex=False, num_samples=1000000):
         """Builds the grid from a path to the mesh.
 
         Only supports OBJ for now.
