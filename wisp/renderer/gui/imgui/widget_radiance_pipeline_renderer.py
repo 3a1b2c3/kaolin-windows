@@ -52,14 +52,26 @@ class WidgetNeuralRadianceFieldRenderer(WidgetImgui):
             imgui.text(f"Acceleration Structure: ")
             imgui.same_line()
             imgui.text(f"{renderer.acceleration_structure()}")
-            imgui.text(f"Active LOD to render: ")
-            changed, self.lod = imgui.core.slider_int(f"##lod", value=self.lod,
-                                                           min_value=0, max_value=15)
-            renderer.lod_idx = self.lod
+
             if imgui.tree_node("Tracer", imgui.TREE_NODE_DEFAULT_OPEN):
                 MAX_SAMPLES = 128               # For general tracers
                 MAX_SAMPLES_RAY_MODE = 512      # For 'ray' sampling mode
+                changed, self.lod = imgui.core.slider_int(f"##lod", value=self.lod,
+                                                            min_value=0, max_value=15)
+                renderer.lod_idx = self.lod
 
+                def _lod_property():
+                    imgui.text(f"Active LOD to render: ")
+                    nef_grid_num_lods = 15
+                    if (hasattr(state.graph, 'neural_pipeline') and 'test-ngp-nerf-interactive'  in self.state.graph.neural_pipeline):
+                        nef_grid_num_lods = state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.num_lods
+                        print((hasattr(state.graph, 'neural_pipeline'), 'test-ngp-nerf-interactive'  in self.state.graph.neural_pipeline),
+                            "___nef_grid_num_lod: ", nef_grid_num_lods)
+                    changed, lod = imgui.core.slider_int(f"##lod", value=self.lod,
+                                                                min_value=0, max_value=nef_grid_num_lods)
+                    if changed:
+                        pass #renderer.lod_idx = lod
+            
                 # TODO (operel): Update the ## ids below with a unique object name to avoid imgui bug
                 def _num_samples_property():
                     max_value = MAX_SAMPLES
@@ -102,7 +114,8 @@ class WidgetNeuralRadianceFieldRenderer(WidgetImgui):
                     "Ray Samples (movement)": _num_samples_movement_property,   # Samples per ray
                     "Batch Size (Rays)": _batch_size_property,
                     "Marcher Type": _marcher_type_property,
-                    "Render Resolution (W x H)": f"{renderer.render_res_x} x {renderer.render_res_y}"
+                    "Render Resolution (W x H)": f"{renderer.render_res_x} x {renderer.render_res_y}",
+                    "LOD to render":  _lod_property()
                 }
                 self.properties_widget.paint(state=state, properties=properties)
                 imgui.tree_pop()
