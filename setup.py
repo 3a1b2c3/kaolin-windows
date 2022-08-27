@@ -114,7 +114,7 @@ if __name__ == '__main__':
         description=DESCRIPTION,
         url=URL,
         license=LICENSE,
-        python_requires='>=3.8',
+        python_requires='>=3.7',
 
         # Package info
         packages=['wisp'] + find_packages(),

@@ -12,12 +12,14 @@ import argparse
 import pprint
 import yaml
 import torch
+
 from wisp.datasets import *
 from wisp.models import Pipeline
 from wisp.models.nefs import *
 from wisp.models.grids import *
 from wisp.tracers import *
 from wisp.datasets.transforms import *
+from wisp.ops.test_mesh import get_obj
 
 str2optim = {m.lower(): getattr(torch.optim, m) for m in dir(torch.optim) if m[0].isupper()}
 
@@ -156,7 +158,7 @@ def parse_options(return_parser=False):
                             help='Sample the normals.')
     data_group.add_argument('--num-samples', type=int, default=100000,
                             help='Number of samples per mode (or per epoch for SPC)')
-    data_group.add_argument('--num-samples-on-mesh', type=int, default=100000000,
+    data_group.add_argument('--num-samples-on-mesh', type=int, default=1000000,
                             help='Number of samples generated on mesh surface to initialize occupancy structures')
     data_group.add_argument('--sample-tex', action='store_true',
                             help='Sample textures')
@@ -423,6 +425,8 @@ def get_modules_from_config(args):
                     if args.tree_type == 'quad':
                         pipeline.nef.grid.init_from_octree(args.base_lod, args.num_lods)
                     elif args.tree_type == 'geometric':
+                        #print("Hashgrid")
+                        vertices, faces = get_obj()
                         pipeline.nef.grid.init_from_geometric(16, args.max_grid_res, args.num_lods)
                     else:
                         raise NotImplementedError

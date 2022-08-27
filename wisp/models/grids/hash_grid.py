@@ -26,10 +26,21 @@ from wisp.models.decoders import BasicDecoder
 import kaolin.ops.spc as spc_ops
 
 from wisp.accelstructs import OctreeAS
+'''
+# indexing by masking follow naturally the morton order
+What is Morton Order (Z-Order, Lebesgue Curve)
+morton (torch.LongTensor): The morton codes of quantized 3D points,
+of shape :math:`(\text{num_points})`.
+// Uses the morton buffer to construct an octree. It is the user's responsibility to allocate
+// space for these zero-init buffers, and for the morton buffer, to allocate the buffer from the back 
+// with the occupied positions.
+
+'''
 
 class HashGrid(BLASGrid):
     """This is a feature grid where the features are defined in a codebook that is hashed.
     """
+    features = None
 
     def __init__(self, 
         feature_dim        : int,
@@ -38,7 +49,7 @@ class HashGrid(BLASGrid):
         feature_std        : float = 0.0,
         feature_bias       : float = 0.0,
         codebook_bitwidth  : int   = 16,
-        blas_level         : int   = 7,
+        blas_level         : int   = 7,  # octree
         **kwargs
     ):
         """Initialize the hash grid class.
@@ -118,6 +129,7 @@ class HashGrid(BLASGrid):
         """
         self.codebook.requires_grad_(False)
 
+    # returns features
     def interpolate(self, coords, lod_idx, pidx=None):
         """Query multiscale features.
 
@@ -132,10 +144,11 @@ class HashGrid(BLASGrid):
         timer = PerfTimer(activate=False, show_memory=False)
 
         batch, num_samples, _ = coords.shape
-        
+        #print(self.multiscale_type, coords.shape, "__batch, num_samples", batch, num_samples)
         feats = grid_ops.hashgrid(coords, self.resolutions, self.codebook_bitwidth, lod_idx, self.codebook)
-
+        self.features = feats
         if self.multiscale_type == 'cat':
+            #print( "__batch, num_samples", feats.reshape(batch, num_samples, -1).shape)
             return feats.reshape(batch, num_samples, -1)
         elif self.multiscale_type == 'sum':
             return feats.reshape(batch, num_samples, len(self.resolutions), self.feature_dim).sum(-2)

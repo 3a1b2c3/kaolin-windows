@@ -247,3 +247,5 @@ class WispState:
 
     extent: Dict[str, object] = field(default_factory=dict)
     """ Extensible field: custom wisp applications information can be added here. """
+
+    debug: Dict[str, object] = field(default_factory=dict)

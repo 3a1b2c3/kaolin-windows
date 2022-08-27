@@ -65,6 +65,7 @@ def mesh_to_spc(vertices, faces, level, num_samples=100000000):
         - prefix
     """
     octree = mesh_to_octree(vertices, faces, level, num_samples)
+
     points, pyramid, prefix = octree_to_spc(octree)
     return octree, points, pyramid, prefix
 
@@ -87,7 +88,6 @@ def octree_to_spc(octree):
     pyramid = pyramid[0]
     return points, pyramid, prefix
 
-
 def mesh_to_octree(vertices, faces, level, num_samples=100000000):
     """Construct an octree from a mesh.
 
@@ -101,6 +101,7 @@ def mesh_to_octree(vertices, faces, level, num_samples=100000000):
         (torch.ByteTensor): the octree tensor
     """
     samples = mesh_ops.sample_surface(vertices.cuda(), faces.cuda(), num_samples)[0]
+
     # Augment samples... may be a hack that isn't actually needed
     samples = torch.cat([samples,
         samples + (torch.rand_like(samples) * 2.0 - 1.0) * (1.0/(2**(level+1)))], dim=0)

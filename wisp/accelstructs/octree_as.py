@@ -22,7 +22,7 @@ class OctreeAS(object):
     def __init__(self):
         self.initialized = False
 
-    def init_from_mesh(self, mesh_path, level, sample_tex=False, num_samples=100000000):
+    def init_from_mesh(self, mesh_path, level, sample_tex=False, num_samples=1000000):
         """Builds the grid from a path to the mesh.
 
         Only supports OBJ for now.
@@ -48,8 +48,9 @@ class OctreeAS(object):
         self.V, self.F = mesh_ops.normalize(self.V, self.F, 'sphere')
 
         # Note: This function is not deterministic since it relies on sampling.
-        #       Eventually this will be replaced by 3D rasterization.
+        #       Eventually this will be replaced by 3D rasterization
         octree = wisp_spc_ops.mesh_to_octree(self.V, self.F, level, num_samples)
+
         self.init(octree)
     
     def init_from_pointcloud(self, pointcloud, level):
@@ -222,7 +223,7 @@ class OctreeAS(object):
             pidx = pidx[mask]
             #depth_samples = depth[None].repeat(rays.origins.shape[0], 1)[mask][..., None]
             depth_samples = depth[mask][..., None]
-            
+            #print(mask, " raymarch_type ", raymarch_type)       # raymarch_type  ray        
             #deltas = spc_render.diff(depth_samples, boundary).reshape(-1, 1) 
             deltas = deltas[mask].reshape(-1, 1)
 

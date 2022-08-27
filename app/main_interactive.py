@@ -5,7 +5,7 @@
 # and any modifications thereto.  Any use, reproduction, disclosure or
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
-
+import sys
 
 if __name__ == "__main__":
     from cuda_guard import setup_cuda_context
@@ -42,7 +42,9 @@ if __name__ == "__main__":
         scene_state.renderer.device = trainer.device  # Use same device for trainer and renderer
         renderer = OptimizationApp(wisp_state=scene_state,
                                         trainer_step_func=trainer.iterate,
-                                        experiment_name="wisp trainer")
+                                        experiment_name="wisp trainer",
+                                        #dataset=train_dataset
+                                        )
         renderer.run()
     else:
         log.info("Running headless. For the app, set WISP_HEADLESS=0")

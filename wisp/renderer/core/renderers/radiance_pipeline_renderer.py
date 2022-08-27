@@ -44,6 +44,7 @@ class NeuralRadianceFieldPackedRenderer(RayTracedRenderer):
         self.output_height = None
         self.far_clipping = None
         self._last_state = dict()
+        self.lod_idx = None
 
         self._data_layers = self.regenerate_data_layers()
 
@@ -70,11 +71,14 @@ class NeuralRadianceFieldPackedRenderer(RayTracedRenderer):
     def needs_refresh(self, payload: FramePayload, *args, **kwargs) -> bool:
         return self._last_state.get('num_steps', 0) < self.num_steps
 
-    def render(self, rays: Optional[Rays] = None) -> RenderBuffer:
+    def render(self, rays: Optional[Rays] = None, lod_idx=None) -> RenderBuffer:
         rb = RenderBuffer(hit=None)
+        print(self.lod_idx, "___ lod_idx2: " ,  lod_idx)
+        if lod_idx == None:
+            lod_idx = self.lod_idx
         for ray_batch in rays.split(self.batch_size):
             # TODO(ttakikawa): Add a way to control the LOD in the GUI
-            rb += self.tracer(self.nef, rays=ray_batch, lod_idx=None, raymarch_type=self.raymarch_type,
+            rb += self.tracer(self.nef, rays=ray_batch, lod_idx=lod_idx, raymarch_type=self.raymarch_type,
                     num_steps=self.num_steps, bg_color=self.bg_color)
 
         # Rescale renderbuffer to original size
