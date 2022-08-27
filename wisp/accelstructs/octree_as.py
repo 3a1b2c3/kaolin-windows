@@ -144,7 +144,6 @@ class OctreeAS(object):
                 rays.origins, rays.dirs, level, return_depth=True, with_exit=with_exit)
         return ridx, pidx, depth
 
-    # here
     def raymarch(self, rays, level=None, num_samples=64, raymarch_type='voxel'):
         """Samples points along the ray inside the SPC structure.
 

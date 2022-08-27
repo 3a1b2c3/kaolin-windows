@@ -13,7 +13,6 @@ from kaolin.ops.spc.points import points_to_morton, morton_to_points, unbatched_
 from kaolin.rep.spc import Spc
 from kaolin.ops.spc import points_to_morton, morton_to_points, unbatched_points_to_octree, unbatched_get_level_points
 
-OPATH = os.path.normpath(os.path.join(__file__, "../../../../data/test/obj/1.obj"))
 
 '''
 # indexing by masking follow naturally the morton order
@@ -78,9 +77,9 @@ def mergeOctrees(points_hierarchy1, points_hierarchy2, pyramid1, pyramid2,
 
 
 # get features
-def interpolate(grid_ops, coords, lod_idx, pidx=None):
-    self.resolutions, self.codebook_bitwidth, lod_idx, self.codebook
-        """Query multiscale features.
+def interpolate(self, grid_ops, coords, lod_idx, pidx=None):
+        self.resolutions, self.codebook_bitwidth, lod_idx, self.codebook
+        """Query multiscale features. hasd grid
 
         Args:
             coords (torch.FloatTensor): coords of shape [batch, num_samples, 3]

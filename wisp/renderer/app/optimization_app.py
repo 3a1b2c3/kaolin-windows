@@ -22,7 +22,7 @@ class OptimizationApp(WispApp):
 
     def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str,
                 dataset=None):
-        super().__init__(wisp_state, experiment_name, dataset)
+        super().__init__(wisp_state, experiment_name)
 
 
         # Tell the renderer to invoke the optimization step() function on every background iteration.
