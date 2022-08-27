@@ -65,6 +65,9 @@ class WidgetSceneGraph(WidgetImgui):
             if visibility_toggled:
                 request_redraw(state)
 
+    '''
+    Ray origin,  Normal
+    '''
     @staticmethod
     def paint_rays_debug_checkbox(state, obj_id):
         visible_objects = state.debug
