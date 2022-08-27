@@ -57,6 +57,25 @@ class WidgetSceneGraph(WidgetImgui):
                 del self.object_widgets[widget_id]
 
     @staticmethod
+    def paint_octree_debug_checkbox(state, obj_id):
+        visible_objects = state.debug
+        if (obj_id in visible_objects):
+            visibility_toggled, is_checked = imgui.checkbox("DEBUG octree as " + obj_id, visible_objects[obj_id])
+            state.debug[obj_id] = is_checked
+            if visibility_toggled:
+                request_redraw(state)
+
+    @staticmethod
+    def paint_rays_debug_checkbox(state, obj_id):
+        visible_objects = state.debug
+        if (obj_id in visible_objects):
+            visibility_toggled, is_checked = imgui.checkbox("DEBUG rays as " + obj_id, visible_objects[obj_id])
+            state.debug[obj_id] = is_checked
+            if visibility_toggled:
+                request_redraw(state)
+
+
+    @staticmethod
     def paint_object_debug_checkbox(state, obj_id):
         visible_objects = state.debug
         if (obj_id in visible_objects):
@@ -107,6 +126,8 @@ class WidgetSceneGraph(WidgetImgui):
                     # add debug drawing 
                     self.paint_object_debug_checkbox(state, "wireframe")
                     self.paint_object_debug_checkbox(state, "points")
+                    self.paint_rays_debug_checkbox(state, "points")
+                    self.paint_octree_debug_checkbox(state, "points")
 
                     for obj_id, obj in bl_renderers.items():
                         if obj.status != 'loaded':
