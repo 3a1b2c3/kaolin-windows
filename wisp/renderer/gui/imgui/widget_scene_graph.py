@@ -57,6 +57,16 @@ class WidgetSceneGraph(WidgetImgui):
                 del self.object_widgets[widget_id]
 
     @staticmethod
+    def paint_object_debug_checkbox(state, obj_id):
+        visible_objects = state.graph.visible_objects
+        is_checked = True
+        obj_id == 'wireframe'
+        visibility_toggled, is_checked = imgui.checkbox("DEBUG mesh as " + obj_id, is_checked)
+        visible_objects[obj_id] = is_checked
+        if visibility_toggled:
+            request_redraw(state)
+
+    @staticmethod
     def paint_object_checkbox(state, obj_id):
         visible_objects = state.graph.visible_objects
         is_checked = visible_objects.get(obj_id, False)
@@ -95,6 +105,10 @@ class WidgetSceneGraph(WidgetImgui):
                 self.paint_all_objects_checkbox(state)
                 imgui.same_line()
                 if imgui.tree_node("Objects", imgui.TREE_NODE_DEFAULT_OPEN):
+                    # add debug drawing 
+                    self.paint_object_debug_checkbox(state, "wireframe")
+                    self.paint_object_debug_checkbox(state, "points")
+
                     for obj_id, obj in bl_renderers.items():
                         if obj.status != 'loaded':
                             continue
