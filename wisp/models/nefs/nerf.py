@@ -37,7 +37,7 @@ class NeuralRadianceField(BaseNeuralField):
         """Creates positional embedding functions for the position and view direction.
         """
         self.pos_embedder, self.pos_embed_dim = get_positional_embedder(self.pos_multires, 
-                                                                       self.embedder_type == "positional")#UNUSED
+                                                                       self.embedder_type == "positional")
                                                                 
         self.view_embedder, self.view_embed_dim = get_positional_embedder(self.view_multires, 
                                                                          self.embedder_type == "positional")
@@ -79,7 +79,7 @@ class NeuralRadianceField(BaseNeuralField):
                                base_lod=self.base_lod, num_lods=self.num_lods,
                                interpolation_type=self.interpolation_type, multiscale_type=self.multiscale_type,
                                **self.kwargs)
-    #unused
+    # unused buy default
     def prune(self):
         """Prunes the blas based on current state.
         """
@@ -91,7 +91,6 @@ class NeuralRadianceField(BaseNeuralField):
                 density_decay = 0.6
                 min_density = ((0.01 * 512)/np.sqrt(3))
 
-                print("________prune")
                 self.grid.occupancy = self.grid.occupancy.cuda()
                 self.grid.occupancy = self.grid.occupancy * density_decay
                 points = self.grid.dense_points.cuda()
@@ -157,7 +156,7 @@ class NeuralRadianceField(BaseNeuralField):
         
         # Embed coordinates into high-dimensional vectors with the grid.  HashGrid
         feats = self.grid.interpolate(coords, lod_idx).reshape(-1, self.effective_feature_dim)
-        print(feats.shape, "self.effective_feature_dim: ", self.effective_feature_dim)
+        #print(feats.shape, "self.effective_feature_dim: ", self.effective_feature_dim) im:  32
         self.features = feats
         timer.check("rf_rgba_interpolate")
 
@@ -169,7 +168,7 @@ class NeuralRadianceField(BaseNeuralField):
         else: #
             fdir = torch.cat([feats,
                 self.view_embedder(-ray_d)[:,None].repeat(1, num_samples, 1).view(-1, self.view_embed_dim)], dim=-1)
-            print(lod_idx, "___ray_d:", len(ray_d), len( coords))
+            #print(lod_idx, "___ray_d:", len(ray_d), len( coords))
         timer.check("rf_rgba_embed_cat")
         
         # Decode high-dimensional vectors to RGBA.

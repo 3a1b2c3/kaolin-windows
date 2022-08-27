@@ -144,11 +144,11 @@ class HashGrid(BLASGrid):
         timer = PerfTimer(activate=False, show_memory=False)
 
         batch, num_samples, _ = coords.shape
-        print(self.multiscale_type, coords.shape, "__batch, num_samples", batch, num_samples)
+        #print(self.multiscale_type, coords.shape, "__batch, num_samples", batch, num_samples)
         feats = grid_ops.hashgrid(coords, self.resolutions, self.codebook_bitwidth, lod_idx, self.codebook)
         self.features = feats
         if self.multiscale_type == 'cat':
-            print( "__batch, num_samples", feats.reshape(batch, num_samples, -1).shape)
+            #print( "__batch, num_samples", feats.reshape(batch, num_samples, -1).shape)
             return feats.reshape(batch, num_samples, -1)
         elif self.multiscale_type == 'sum':
             return feats.reshape(batch, num_samples, len(self.resolutions), self.feature_dim).sum(-2)
