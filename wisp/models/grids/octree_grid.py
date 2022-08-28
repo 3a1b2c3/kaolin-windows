@@ -158,7 +158,7 @@ class OctreeGrid(BLASGrid):
         
         log.info(f"Pyramid:{self.blas.pyramid[0]}")
         log.info(f"Pyramid Dual: {self.pyramid_dual[0]}")
-
+    #learned
     def freeze(self):
         """Freezes the feature grid.
         """
