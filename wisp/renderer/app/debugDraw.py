@@ -11,10 +11,8 @@
 from __future__ import annotations
 from contextlib import contextmanager
 import os, sys
-from typing import Optional, Type, Callable, Dict, List, Tuple
 
 import torch
-from glumpy import app, gloo, gl, ext
 
 from kaolin.render.camera import Camera
 from kaolin.io import utils
@@ -23,11 +21,7 @@ import kaolin.ops.spc as spc_ops
 
 from wisp.core.primitives import PrimitivesPack
 from wisp.framework import WispState, watch
-from wisp.renderer.core import RendererCore
-from wisp.renderer.core.control import CameraControlMode, WispKey, WispMouseButton
-from wisp.renderer.core.control import FirstPersonCameraMode, TrackballCameraMode, TurntableCameraMode
-from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainter
-from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
+from wisp.renderer.gizmos import PrimitivesPainter
 from wisp.ops.spc.conversions import mesh_to_spc
 #from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
 
@@ -37,6 +31,7 @@ from wisp.ops.spc_formatting import describe_octree
 from wisp.renderer.gizmos import PrimitivesPainter
 
 GREEN = torch.FloatTensor([0, 1, 0, 1])
+RED = torch.FloatTensor([1, 0, 0, 1]) 
 
 class DebugData(object):
     data = {
@@ -55,6 +50,57 @@ class DebugData(object):
         self.data['mesh']['lines'] = PrimitivesPainter()
         self.data['mesh']['lines'].redraw(layers)
 
+    #         cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.debugData.dataset, self.wisp_state)
+    def add_rays_points_lines(self, dataSet, colorT = GREEN):
+        #print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
+        c = dataSet.coords
+        # print("c:", c)
+        rays = dataSet.data['rays']
+        rgbs = dataSet.data["imgs"] 
+        masks = dataSet.data["masks"]
+        depths = dataSet.data["masks"] #wisp_state.graph.channels["depth"] #Channel depth is usually a distance to the surface hit point
+        # add points
+        dpoints_layers_to_draw = [PrimitivesPack()]
+        points_layers_to_draw = [PrimitivesPack()]
+        colorT = torch.FloatTensor([0, 1, 1, 1]) 
+        #octree_to_layers(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level, colorT, dpoints_layers_to_draw[0])
+
+        N = rays.origins.shape[0]
+        for j in range(0, len(rays)):
+            # print(rays.shape, "rays[j]", rays[j].shape)
+            for i in range(0, len(rays[j].origins)):
+                #points.append(rays[i].origins) 
+                #points_layers_to_draw[0].add_points(points[i], colorT)
+                #i, j:  39999 0 200 40000
+                #print("i, j: ", i, j, len(rays),  len(rays[j].origins)) #i, j:  0 0 200 40000
+                points_layers_to_draw[j].add_lines(rays[j][i].origins, rays[j][i].origins + rays[j][i].dirs, colorT)
+                dpoints_layers_to_draw[j].add_points(rays[j][i].origins)
+            break
+
+        # add points
+        self.data['rays']['points'] = PrimitivesPainter()
+        self.data['rays']['points'].redraw(dpoints_layers_to_draw)
+
+        # draw mesh
+        self.data['rays']['lines'] = PrimitivesPainter()
+        self.data['rays']['lines'].redraw(points_layers_to_draw)
+
+    def add_octree(self, colorT = GREEN, levels=7):
+        octreeAS = get_OctreeAS(levels)
+        h = get_HashGrid()
+        f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
+        print(octreeAS.points.shape, " __octreeAS.points ")#,  batch, num_samples )  
+        o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
+        # points:  torch.Size([24535, 3])
+        print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
+
+        self.data['octree']['paints'] = PrimitivesPainter()
+        self.data['octree']['paints'].redraw(o_layer)
+
+    def add_all(self):
+        self.add_mesh_points_lines()
+        self.add_octree()
+        #self.add_rays_points_lines()
 
 def init_debug_state(wisp_state, debugData):
     for k1, v1 in debugData.items():
@@ -86,47 +132,18 @@ def init_debug_state(wisp_state, debugData):
 cumulative summarization of the number of "1" bits. <br>
 It makes sense to calculate this information once and then cache it. <br>
 The `pyramid` field does exactly that: it keeps summarizes the number of occupied cells per level, and their cumsum, for fast level-indexing.
-'''
 
 
-
-def getDebugCloud(dataSet, wisp_state, level=3):
-    #print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
-    c = dataSet.coords
-   # print("c:", c)
-    rays = dataSet.data['rays']
-    rgbs = dataSet.data["imgs"] 
-    masks = dataSet.data["masks"]
-    depths = dataSet.data["masks"] #wisp_state.graph.channels["depth"] #Channel depth is usually a distance to the surface hit point
-    # add points
-    dpoints_layers_to_draw = [PrimitivesPack()]
-    points_layers_to_draw = [PrimitivesPack()]
-    colorT = torch.FloatTensor([0, 1, 1, 1]) 
-    #octree_to_layers(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level, colorT, dpoints_layers_to_draw[0])
-
-    N = rays.origins.shape[0]
-    for j in range(0, len(rays)):
-        # print(rays.shape, "rays[j]", rays[j].shape)
-        for i in range(0, len(rays[j].origins)):
-            #points.append(rays[i].origins) 
-            #points_layers_to_draw[0].add_points(points[i], colorT)
-            #i, j:  39999 0 200 40000
-            #print("i, j: ", i, j, len(rays),  len(rays[j].origins)) #i, j:  0 0 200 40000
-            points_layers_to_draw[j].add_lines(rays[j][i].origins, rays[j][i].origins + rays[j][i].dirs, colorT)
-        break
-
-    '''
     points = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points
     #points1 = point_hierarchy1[pyramid1[-1, 1]:pyramid1[-1, 1] + pyramid1[-1, 0]
     colorT = torch.FloatTensor([1, 1, 1, 1]) 
     for i in range(0, len(points)): 
         dpoints_layers_to_draw[0].add_points(points[i], colorT)
-    '''
+ 
     # wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy
     return points_layers_to_draw, dpoints_layers_to_draw
 
-  
-""" 
+
         rgbs (list of torch.FloatTensor): List of RGB tensors of shape [H, W, 3].
         masks (list of torch.FloatTensor): List of mask tensors of shape [H, W, 1].
         rays (list of wisp.core.Rays): List of rays.origins and rays.dirs of shape [H, W, 3].
@@ -138,8 +155,7 @@ def getDebugCloud(dataSet, wisp_state, level=3):
         self.dataset['rays']
         print("\n____initwisp_state.channels ", wisp_state.graph.channels.keys())
         #def create_pointcloud_from_images(rgbs, masks, rays, depths):
-        sys.exit()
-        '''
+
         print("\n____initwisp_state.channels ", wisp_state.graph.channels.keys())
         print("\n____init_wisp_state.neural_pipelines1", dir(wisp_state.graph.channels["depth"])) # Channel
         print("\n____init_wisp_state.neural_pipelines2", wisp_state.graph.channels["hit"])
@@ -193,4 +209,4 @@ def getDebugCloud(dataSet, wisp_state, level=3):
           (14): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
           (15): Parameter containing: [torch.cuda.FloatTensor of size 524288x2 (GPU 0)]
       )
-"""
+'''

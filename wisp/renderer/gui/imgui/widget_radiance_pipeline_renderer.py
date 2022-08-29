@@ -34,7 +34,6 @@ class WidgetNeuralRadianceFieldRenderer(WidgetImgui):
         super().__init__()
         self.pipeline_widget = None
         self.properties_widget = WidgetPropertyEditor()
-        self.lod = 15
 
     def get_pipeline_widget(self, pipeline_name):
         if self.pipeline_widget is None:
@@ -56,21 +55,21 @@ class WidgetNeuralRadianceFieldRenderer(WidgetImgui):
             if imgui.tree_node("Tracer", imgui.TREE_NODE_DEFAULT_OPEN):
                 MAX_SAMPLES = 128               # For general tracers
                 MAX_SAMPLES_RAY_MODE = 512      # For 'ray' sampling mode
-                changed, self.lod = imgui.core.slider_int(f"##lod", value=self.lod,
-                                                            min_value=0, max_value=15)
-                renderer.lod_idx = self.lod
 
                 def _lod_property():
                     imgui.text(f"Active LOD to render: ")
-                    nef_grid_num_lods = 15
-                    if (hasattr(state.graph, 'neural_pipeline') and 'test-ngp-nerf-interactive'  in self.state.graph.neural_pipeline):
-                        nef_grid_num_lods = state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.num_lods
+                    max_nef_grid_num_lods = 15
+                    if (hasattr(state.graph, 'neural_pipeline') and 'test-ngp-nerf-interactive' in self.state.graph.neural_pipeline):
+                        max_nef_grid_num_lods = state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.num_lods
                         print((hasattr(state.graph, 'neural_pipeline'), 'test-ngp-nerf-interactive'  in self.state.graph.neural_pipeline),
-                            "___nef_grid_num_lod: ", nef_grid_num_lods)
-                    changed, lod = imgui.core.slider_int(f"##lod", value=self.lod,
-                                                                min_value=0, max_value=nef_grid_num_lods)
+                            "___nef_grid_num_lod: ", max_nef_grid_num_lods)
+                    if (renderer.lod_idx is None):
+                        renderer.lod_idx = max_nef_grid_num_lods
+                    nef_grid_num_lods = renderer.lod_idx if renderer.lod_idx is not None else max_nef_grid_num_lods
+                    changed, nef_grid_num_lods = imgui.core.slider_int(f"##lod", value=nef_grid_num_lods,
+                                                                min_value=0, max_value= max_nef_grid_num_lods)
                     if changed:
-                        pass #renderer.lod_idx = lod
+                        renderer.lod_idx = nef_grid_num_lods
             
                 # TODO (operel): Update the ## ids below with a unique object name to avoid imgui bug
                 def _num_samples_property():

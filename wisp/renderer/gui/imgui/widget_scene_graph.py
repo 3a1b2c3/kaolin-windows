@@ -64,7 +64,8 @@ class WidgetSceneGraph(WidgetImgui):
     def paint_debug_checkbox(state, key):
         visible_objects = state.debug
         if (key in visible_objects):
-            visibility_toggled, is_checked = imgui.checkbox("DEBUG rays as " + key.split("_")[-1], visible_objects.get(key))
+            tokens = key.split("_")
+            visibility_toggled, is_checked = imgui.checkbox("DEBUG " + tokens[0] + " as " + tokens[-1], visible_objects.get(key))
             state.debug[key] = is_checked
             if visibility_toggled:
                 request_redraw(state)
