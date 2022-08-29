@@ -94,8 +94,8 @@ class DebugData(object):
         # points:  torch.Size([24535, 3])
         print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
 
-        self.data['octree']['paints'] = PrimitivesPainter()
-        self.data['octree']['paints'].redraw(o_layer)
+        self.data['octree']['points'] = PrimitivesPainter()
+        self.data['octree']['points'].redraw(o_layer)
 
     def add_all(self):
         self.add_mesh_points_lines()
@@ -132,17 +132,6 @@ def init_debug_state(wisp_state, debugData):
 cumulative summarization of the number of "1" bits. <br>
 It makes sense to calculate this information once and then cache it. <br>
 The `pyramid` field does exactly that: it keeps summarizes the number of occupied cells per level, and their cumsum, for fast level-indexing.
-
-
-    points = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points
-    #points1 = point_hierarchy1[pyramid1[-1, 1]:pyramid1[-1, 1] + pyramid1[-1, 0]
-    colorT = torch.FloatTensor([1, 1, 1, 1]) 
-    for i in range(0, len(points)): 
-        dpoints_layers_to_draw[0].add_points(points[i], colorT)
- 
-    # wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy
-    return points_layers_to_draw, dpoints_layers_to_draw
-
 
         rgbs (list of torch.FloatTensor): List of RGB tensors of shape [H, W, 3].
         masks (list of torch.FloatTensor): List of mask tensors of shape [H, W, 1].
