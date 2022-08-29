@@ -82,11 +82,10 @@ class DebugData(object):
         self.data['rays']['points'] = PrimitivesPainter()
         self.data['rays']['points'].redraw(dpoints_layers_to_draw)
 
-        # draw mesh
         self.data['rays']['lines'] = PrimitivesPainter()
         self.data['rays']['lines'].redraw(points_layers_to_draw)
 
-    def add_octree(self, colorT = GREEN, levels=2, scale= False):
+    def add_octree(self, colorT = GREEN, levels=2, scale=False):
         octreeAS = get_OctreeAS(levels)
         h = get_HashGrid()
         f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
