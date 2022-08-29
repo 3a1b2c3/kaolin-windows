@@ -38,7 +38,7 @@ from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid, get_features_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
-from .debugDraw import getDebugCloud
+from .debugDraw import getDebugCloud, DebugData, init_debug_state
 
 @contextmanager
 def cuda_activate(img):
@@ -50,9 +50,7 @@ def cuda_activate(img):
     mapping.unmap()
 
 class WispApp(ABC):
-    dataset = None
-    mesh = None
-    cloudPoints = None
+    debugData = DebugData()
 
     """ WispApp is a base app implementation which takes care of the entire lifecycle of the rendering loop:
     this is the infinite queue of events which includes: handling of IO and OS events, rendering frames and running
@@ -119,7 +117,7 @@ class WispApp(ABC):
         self._is_imgui_hovered = False
         self._is_reposition_imgui_menu = True
         self.canvas_dirty = False
-        self.dataset = dataset
+        self.debugData.dataset = dataset
         # Note: Normally pycuda.gl.autoinit should be invoked here after the window is created,
         # but wisp already initializes it when the library first loads. See wisp.app.cuda_guard.py
 
@@ -156,20 +154,19 @@ class WispApp(ABC):
         #o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
         # points:  torch.Size([24535, 3])
         print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
+        init_debug_state(wisp_state, self.debugData.data)
         #sys.exit()
 
         # add points
-        self.points = PrimitivesPainter()
- 
-        self.points.redraw(points_layers_to_draw)
+        self.debugData.data["mesh"]["points"] = PrimitivesPainter()
+        self.debugData.data["mesh"]["points"].redraw(points_layers_to_draw)
 
         # draw mesh
-        self.mesh = PrimitivesPainter()
-        self.mesh.redraw(layers)
-        self.wisp_state.debug['wireframe'] = True
-        self.wisp_state.debug['points'] = False
+        self.debugData.data["mesh"]["lines"] = PrimitivesPainter()
+        self.debugData.data["mesh"]["lines"].redraw(layers)
 
-        #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
+
+        #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.debugData.dataset, self.wisp_state)
         #self.cloudPoints = PrimitivesPainter()
         #self.cloudPoints.redraw(cloudLayer)
         #self.cloudPoints.redraw(dpoints_layers_to_draw)
@@ -527,14 +524,13 @@ class WispApp(ABC):
                 print("no features")
             '''
         # mesh
-        if (self.mesh.lines and self.wisp_state.debug.get('wireframe')):
-            self.mesh.render(camera)
-        if (self.points.points and self.wisp_state.debug.get('points')):
-            self.points.render(camera)
-        if (self.cloudPoints):
-            #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
-            #self.cloudPoints.redraw(cloudLayer)
-            self.cloudPoints.render(camera)
+        for k1, v1 in self.debugData.data.items():
+            for k, _v in v1.items():
+                if self.wisp_state.debug[k1 + '_' + k]:
+                    if self.debugData.data.get(k1).get(k):
+                        self.debugData.data.get(k1).get(k).render(camera)
+
+
         self.canvas_dirty = False
 
     def register_background_task(self, hook: Callable[[], None]) -> None:
