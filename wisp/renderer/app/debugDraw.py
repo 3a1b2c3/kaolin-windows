@@ -155,7 +155,6 @@ The `pyramid` field does exactly that: it keeps summarizes the number of occupie
         self.dataset['rays']
         print("\n____initwisp_state.channels ", wisp_state.graph.channels.keys())
         #def create_pointcloud_from_images(rgbs, masks, rays, depths):
-        sys.exit()
 
         print("\n____initwisp_state.channels ", wisp_state.graph.channels.keys())
         print("\n____init_wisp_state.neural_pipelines1", dir(wisp_state.graph.channels["depth"])) # Channel
