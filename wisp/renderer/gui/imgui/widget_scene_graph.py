@@ -111,9 +111,6 @@ class WidgetSceneGraph(WidgetImgui):
                 imgui.same_line()
                 if imgui.tree_node("Objects", imgui.TREE_NODE_DEFAULT_OPEN):
                     # add debug drawing 
-                    for k, _v in state.debug.items(): 
-                        self.paint_debug_checkbox(state, k)
-
 
                     for obj_id, obj in bl_renderers.items():
                         if obj.status != 'loaded':
@@ -124,6 +121,9 @@ class WidgetSceneGraph(WidgetImgui):
                         self.paint_object_checkbox(state, obj_id)
                         imgui.same_line()
                         if imgui.tree_node(obj_id, imgui.TREE_NODE_DEFAULT_OPEN):
+                            for k, _v in state.debug.items(): 
+                                self.paint_debug_checkbox(state, k)
+
                             imgui.text(f"Type:")
                             imgui.same_line()
                             obj_title = self.get_object_title(obj_type)
