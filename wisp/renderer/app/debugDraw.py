@@ -34,8 +34,31 @@ from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid, get_features_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
+from wisp.renderer.gizmos import PrimitivesPainter
+
+GREEN = torch.FloatTensor([0, 1, 0, 1])
+
+class DebugData(object):
+    data = {
+        'mesh' :  { 'points' : None, 'lines' : None },
+        'rays' :  { 'points' : None, 'lines' : None },
+        'octree' : { 'points' : None }
+    }
+
+    def add_mesh_points_lines(self, colorT = GREEN ):
+        layers, points_layers_to_draw = get_obj_layers()
+        # add points
+        self.data['mesh']['points'] = PrimitivesPainter()
+        self.data['mesh']['points'].redraw(points_layers_to_draw)
+
+        # draw mesh
+        self.data['mesh']['lines'] = PrimitivesPainter()
+        self.data['mesh']['lines'].redraw(layers)
 
 
+def init_debug_state(wisp_state, data):
+    wisp_state.debug['mesh_lines'] = True
+    wisp_state.debug['mesh_points'] = False
 
 '''
         # Normalize channel to [0, 1]
@@ -63,6 +86,7 @@ cumulative summarization of the number of "1" bits. <br>
 It makes sense to calculate this information once and then cache it. <br>
 The `pyramid` field does exactly that: it keeps summarizes the number of occupied cells per level, and their cumsum, for fast level-indexing.
 '''
+
 
 
 def getDebugCloud(dataSet, wisp_state, level=3):

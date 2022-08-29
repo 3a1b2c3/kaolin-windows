@@ -38,7 +38,7 @@ from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid, get_features_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
-from .debugDraw import getDebugCloud
+from .debugDraw import getDebugCloud, DebugData, init_debug_state
 
 @contextmanager
 def cuda_activate(img):
@@ -50,7 +50,7 @@ def cuda_activate(img):
     mapping.unmap()
 
 class WispApp(ABC):
-    dataset = None
+    data = DebugData()
     mesh = None
     cloudPoints = None
 
@@ -156,6 +156,7 @@ class WispApp(ABC):
         #o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
         # points:  torch.Size([24535, 3])
         print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
+        init_debug_state(wisp_state, self.data)
         #sys.exit()
 
         # add points
@@ -166,8 +167,7 @@ class WispApp(ABC):
         # draw mesh
         self.mesh = PrimitivesPainter()
         self.mesh.redraw(layers)
-        self.wisp_state.debug['wireframe'] = True
-        self.wisp_state.debug['points'] = False
+
 
         #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.dataset, self.wisp_state)
         #self.cloudPoints = PrimitivesPainter()
