@@ -34,7 +34,7 @@ from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid, get_features_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
-from .debugDraw import getDebugCloud, DebugData, init_debug_state
+from .debugDraw import DebugData, init_debug_state
 
 @contextmanager
 def cuda_activate(img):
@@ -142,7 +142,7 @@ class WispApp(ABC):
         self.prim_painter = PrimitivesPainter() # grid
         # add debug
         init_debug_state(wisp_state, self.debugData.data)
-        self.debugData.add_mesh_points_lines()
+        self.debugData.add_all()
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())

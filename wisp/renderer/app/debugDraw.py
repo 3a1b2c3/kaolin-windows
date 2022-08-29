@@ -49,7 +49,17 @@ class DebugData(object):
         self.data['mesh']['lines'] = PrimitivesPainter()
         self.data['mesh']['lines'].redraw(layers)
 
-    def add_octrre(self, colorT = GREEN):
+    def add_rays_points_lines(self, colorT = GREEN):
+        layers, points_layers_to_draw = get_obj_layers()
+        # add points
+        self.data['rays']['points'] = PrimitivesPainter()
+        self.data['rays']['points'].redraw(points_layers_to_draw)
+
+        # draw mesh
+        self.data['rays']['lines'] = PrimitivesPainter()
+        self.data['rays']['lines'].redraw(layers)
+
+    def add_octree(self, colorT = GREEN):
         octreeAS = get_OctreeAS(levels=7)
         h = get_HashGrid()
         f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
@@ -59,14 +69,17 @@ class DebugData(object):
         # points:  torch.Size([24535, 3])
         print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
 
-        #sys.exit()
-
-
         #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.debugData.dataset, self.wisp_state)
         #self.cloudPoints = PrimitivesPainter()
         #self.cloudPoints.redraw(cloudLayer)
         #self.cloudPoints.redraw(dpoints_layers_to_draw)
         #self.cloudPoints.redraw(o_layer)
+
+
+    def add_all(self):
+        self.add_mesh_points_lines()
+        self.add_rays_points_lines()
+        self.add_octree()
 
 def init_debug_state(wisp_state, debugData):
     for k1, v1 in debugData.items():
