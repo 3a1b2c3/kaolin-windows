@@ -54,7 +54,7 @@ def get_level_points_from_octree(octree, level):
     return get_level_points(points, pyramid, level)
 
 def build(octree):
-    points, pyramid, prefix = octree_to_spc(octree)
+    points, pyramid, _prefix = octree_to_spc(octree)
     points_dual, pyramid_dual = create_dual(points, pyramid)
     return points_dual, pyramid_dual
 
@@ -92,7 +92,7 @@ def points_to_coords(points, level):
     return (2**level) * (points*0.5 + 0.5)
 
 def normalize_points(points, level):
-    """Trasnform from [0, 2^l] to [-1, 1]"""
+    """Transform from [0, 2^l] to [-1, 1]"""
     return (points.float() / (2**level)) * 2.0 - 1.0
 
 def point2coeff(x, pts, lod):
