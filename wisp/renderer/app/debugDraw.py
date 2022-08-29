@@ -13,7 +13,6 @@ from contextlib import contextmanager
 import os, sys
 
 import torch
-from glumpy import app, gloo, gl, ext
 
 from kaolin.render.camera import Camera
 from kaolin.io import utils
