@@ -192,7 +192,6 @@ def get_features_HashGrid(coords, hashGrid, lod_idx=15):
     hashGrid.freeze()
     #return feats
 
-
 def get_NeuralRadianceField(f=OPATH, base_lod=1, num_lods=7):
     n = NeuralRadianceField()
     #def rgba(self, coords, ray_d, pidx=None, lod_idx=None):
@@ -200,7 +199,7 @@ def get_NeuralRadianceField(f=OPATH, base_lod=1, num_lods=7):
 
 def octree_to_layers(octree, level, colorT, layers_to_draw=None):
     points = get_level_points_from_octree(octree, level)
-    if points:
+    if points.shape:
         print("\n ___ points: ",  points.shape)
         if layers_to_draw is None:
             layers_to_draw = [PrimitivesPack()]
