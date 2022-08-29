@@ -45,7 +45,7 @@ class DebugData(object):
         'octree' : { 'points' : None }
     }
 
-    def add_mesh_points_lines(self, colorT = GREEN ):
+    def add_mesh_points_lines(self, colorT = GREEN):
         layers, points_layers_to_draw = get_obj_layers()
         # add points
         self.data['mesh']['points'] = PrimitivesPainter()
@@ -56,8 +56,8 @@ class DebugData(object):
         self.data['mesh']['lines'].redraw(layers)
 
 
-def init_debug_state(wisp_state, data):
-    for k1, v1 in data.data.items():
+def init_debug_state(wisp_state, debugData):
+    for k1, v1 in debugData.items():
         for k, _v in v1.items():
             wisp_state.debug[k1 + '_' + k] = False
 
