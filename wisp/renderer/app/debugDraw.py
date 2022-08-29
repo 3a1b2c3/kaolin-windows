@@ -85,12 +85,12 @@ class DebugData(object):
         self.data['rays']['lines'] = PrimitivesPainter()
         self.data['rays']['lines'].redraw(points_layers_to_draw)
 
-    def add_octree(self, colorT = GREEN, levels=7):
+    def add_octree(self, colorT = GREEN, levels=2):
         octreeAS = get_OctreeAS(levels)
         h = get_HashGrid()
         f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
         print(octreeAS.points.shape, " __octreeAS.points ")#,  batch, num_samples )  
-        o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
+        o_layer = octree_to_layers(octreeAS.octree, levels, colorT)
         # points:  torch.Size([24535, 3])
         print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
 
