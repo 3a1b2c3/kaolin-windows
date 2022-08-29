@@ -57,8 +57,9 @@ class DebugData(object):
 
 
 def init_debug_state(wisp_state, data):
-    wisp_state.debug['mesh_lines'] = True
-    wisp_state.debug['mesh_points'] = False
+    for k1, v1 in data.data.items():
+        for k, _v in v1.items():
+            wisp_state.debug[k1 + '_' + k] = False
 
 '''
         # Normalize channel to [0, 1]

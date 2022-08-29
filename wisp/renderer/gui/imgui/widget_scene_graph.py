@@ -7,6 +7,7 @@
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 
 import imgui
+
 from wisp.core.colors import light_purple, white, lime, orange
 from wisp.framework import WispState
 from .widget_imgui import WidgetImgui
@@ -60,11 +61,10 @@ class WidgetSceneGraph(WidgetImgui):
     Ray origin,  Normal
     '''
     @staticmethod
-    def paint_debug_checkbox(state, text, obj_id):
+    def paint_debug_checkbox(state, key):
         visible_objects = state.debug
-        key = text + "_" + obj_id
         if (key in visible_objects):
-            visibility_toggled, is_checked = imgui.checkbox("DEBUG rays as " + obj_id, visible_objects.get(key))
+            visibility_toggled, is_checked = imgui.checkbox("DEBUG rays as " + key.split("_")[-1], visible_objects.get(key))
             state.debug[key] = is_checked
             if visibility_toggled:
                 request_redraw(state)
@@ -111,11 +111,9 @@ class WidgetSceneGraph(WidgetImgui):
                 imgui.same_line()
                 if imgui.tree_node("Objects", imgui.TREE_NODE_DEFAULT_OPEN):
                     # add debug drawing 
-                    self.paint_debug_checkbox(state, "mesh", "lines")
-                    self.paint_debug_checkbox(state, "mesh", "points")
-                    self.paint_debug_checkbox(state, "rays", "points")
-                    self.paint_debug_checkbox(state, "rays", "lines")
-                    self.paint_debug_checkbox(state, "octree", "points")
+                    for k, _v in state.debug.items(): 
+                        self.paint_debug_checkbox(state, k)
+
 
                     for obj_id, obj in bl_renderers.items():
                         if obj.status != 'loaded':
