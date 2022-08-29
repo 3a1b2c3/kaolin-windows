@@ -11,7 +11,6 @@
 from __future__ import annotations
 from contextlib import contextmanager
 import os, sys
-from typing import Optional, Type, Callable, Dict, List, Tuple
 
 import torch
 from glumpy import app, gloo, gl, ext
@@ -23,11 +22,7 @@ import kaolin.ops.spc as spc_ops
 
 from wisp.core.primitives import PrimitivesPack
 from wisp.framework import WispState, watch
-from wisp.renderer.core import RendererCore
-from wisp.renderer.core.control import CameraControlMode, WispKey, WispMouseButton
-from wisp.renderer.core.control import FirstPersonCameraMode, TrackballCameraMode, TurntableCameraMode
-from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainter
-from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
+from wisp.renderer.gizmos import PrimitivesPainter
 from wisp.ops.spc.conversions import mesh_to_spc
 #from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
 
@@ -55,6 +50,24 @@ class DebugData(object):
         self.data['mesh']['lines'] = PrimitivesPainter()
         self.data['mesh']['lines'].redraw(layers)
 
+    def add_octrre(self, colorT = GREEN):
+        octreeAS = get_OctreeAS(levels=7)
+        h = get_HashGrid()
+        f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
+        print(octreeAS.points.shape, " __octreeAS.points ")#,  batch, num_samples )
+        colorT = torch.FloatTensor([0, 1, 0, 1])   
+        #o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
+        # points:  torch.Size([24535, 3])
+        print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
+
+        #sys.exit()
+
+
+        #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.debugData.dataset, self.wisp_state)
+        #self.cloudPoints = PrimitivesPainter()
+        #self.cloudPoints.redraw(cloudLayer)
+        #self.cloudPoints.redraw(dpoints_layers_to_draw)
+        #self.cloudPoints.redraw(o_layer)
 
 def init_debug_state(wisp_state, debugData):
     for k1, v1 in debugData.items():

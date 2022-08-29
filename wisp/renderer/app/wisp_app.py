@@ -21,11 +21,7 @@ from glumpy import app, gloo, gl, ext
 import imgui
 
 from kaolin.render.camera import Camera
-from kaolin.io import utils
-from kaolin.io import obj
-import kaolin.ops.spc as spc_ops
 
-from wisp.core.primitives import PrimitivesPack
 from wisp.framework import WispState, watch
 from wisp.renderer.core import RendererCore
 from wisp.renderer.core.control import CameraControlMode, WispKey, WispMouseButton
@@ -144,33 +140,9 @@ class WispApp(ABC):
         self.widgets = self.create_widgets()        # Create gui widgets for this app
         self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
-        # add a mesh, points
-        layers, points_layers_to_draw = get_obj_layers()
-        octreeAS = get_OctreeAS(levels=7)
-        h = get_HashGrid()
-        f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
-        print(octreeAS.points.shape, " __octreeAS.points ")#,  batch, num_samples )
-        colorT = torch.FloatTensor([0, 1, 0, 1])   
-        #o_layer = octree_to_layers(octreeAS.octree, 6, colorT)
-        # points:  torch.Size([24535, 3])
-        print("...max_level", octreeAS.max_level)#, octreeAS.points[0][0], octreeAS.points.shape)
+        # add debug
         init_debug_state(wisp_state, self.debugData.data)
-        #sys.exit()
-
-        # add points
-        self.debugData.data["mesh"]["points"] = PrimitivesPainter()
-        self.debugData.data["mesh"]["points"].redraw(points_layers_to_draw)
-
-        # draw mesh
-        self.debugData.data["mesh"]["lines"] = PrimitivesPainter()
-        self.debugData.data["mesh"]["lines"].redraw(layers)
-
-
-        #cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.debugData.dataset, self.wisp_state)
-        #self.cloudPoints = PrimitivesPainter()
-        #self.cloudPoints.redraw(cloudLayer)
-        #self.cloudPoints.redraw(dpoints_layers_to_draw)
-        #self.cloudPoints.redraw(o_layer)
+        self.debugData.add_mesh_points_lines()
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
@@ -526,7 +498,7 @@ class WispApp(ABC):
         # mesh
         for k1, v1 in self.debugData.data.items():
             for k, _v in v1.items():
-                if self.wisp_state.debug[k1 + '_' + k]:
+                if self.wisp_state.debug.get(k1 + '_' + k):
                     if self.debugData.data.get(k1).get(k):
                         self.debugData.data.get(k1).get(k).render(camera)
 
