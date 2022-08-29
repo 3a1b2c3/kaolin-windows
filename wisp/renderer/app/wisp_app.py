@@ -46,7 +46,7 @@ def cuda_activate(img):
     mapping.unmap()
 
 class WispApp(ABC):
-    debugData = DebugData()
+    debug_data = DebugData()
 
     """ WispApp is a base app implementation which takes care of the entire lifecycle of the rendering loop:
     this is the infinite queue of events which includes: handling of IO and OS events, rendering frames and running
@@ -113,7 +113,7 @@ class WispApp(ABC):
         self._is_imgui_hovered = False
         self._is_reposition_imgui_menu = True
         self.canvas_dirty = False
-        self.debugData.dataset = dataset
+        self.debug_data.dataset = dataset
         # Note: Normally pycuda.gl.autoinit should be invoked here after the window is created,
         # but wisp already initializes it when the library first loads. See wisp.app.cuda_guard.py
 
@@ -141,8 +141,8 @@ class WispApp(ABC):
         self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
         # add debug
-        init_debug_state(wisp_state, self.debugData.data)
-        self.debugData.add_all()
+        init_debug_state(wisp_state, self.debug_data.data)
+        self.debug_data.add_all()
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
@@ -496,11 +496,11 @@ class WispApp(ABC):
                 print("no features")
             '''
         # mesh
-        for k1, v1 in self.debugData.data.items():
+        for k1, v1 in self.debug_data.data.items():
             for k, _v in v1.items():
                 if self.wisp_state.debug.get(k1 + '_' + k):
-                    if self.debugData.data.get(k1).get(k):
-                        self.debugData.data.get(k1).get(k).render(camera)
+                    if self.debug_data.data.get(k1).get(k):
+                        self.debug_data.data.get(k1).get(k).render(camera)
 
 
         self.canvas_dirty = False

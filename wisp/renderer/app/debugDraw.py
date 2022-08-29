@@ -39,6 +39,7 @@ class DebugData(object):
         'rays' :  { 'points' : None, 'lines' : None },
         'octree' : { 'points' : None }
     }
+    dataset = None
 
     def add_mesh_points_lines(self, colorT = GREEN):
         layers, points_layers_to_draw = get_obj_layers()
@@ -50,12 +51,12 @@ class DebugData(object):
         self.data['mesh']['lines'] = PrimitivesPainter()
         self.data['mesh']['lines'].redraw(layers)
 
-    #         cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.debugData.dataset, self.wisp_state)
+    #         cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.debug_data.dataset, self.wisp_state)
     def add_rays_points_lines(self, dataSet, colorT = GREEN):
         #print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
         c = dataSet.coords
         # print("c:", c)
-        rays = dataSet.data['rays']
+        rays = dataSet.data.get('rays')
         rgbs = dataSet.data["imgs"] 
         masks = dataSet.data["masks"]
         depths = dataSet.data["masks"] #wisp_state.graph.channels["depth"] #Channel depth is usually a distance to the surface hit point
@@ -85,7 +86,7 @@ class DebugData(object):
         self.data['rays']['lines'] = PrimitivesPainter()
         self.data['rays']['lines'].redraw(points_layers_to_draw)
 
-    def add_octree(self, colorT = GREEN, levels=2):
+    def add_octree(self, colorT = GREEN, levels=2, scale= False):
         octreeAS = get_OctreeAS(levels)
         h = get_HashGrid()
         f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
@@ -100,10 +101,11 @@ class DebugData(object):
     def add_all(self):
         self.add_mesh_points_lines()
         self.add_octree()
-        #self.add_rays_points_lines()
+        if self.dataset:
+            self.add_rays_points_lines(self.dataset)
 
-def init_debug_state(wisp_state, debugData):
-    for k1, v1 in debugData.items():
+def init_debug_state(wisp_state, debug_data):
+    for k1, v1 in debug_data.items():
         for k, _v in v1.items():
             wisp_state.debug[k1 + '_' + k] = False
 

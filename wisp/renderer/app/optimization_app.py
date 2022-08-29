@@ -30,6 +30,7 @@ class OptimizationApp(WispApp):
         # The actual rendering will occur in-between these calls, invoked by the on_draw() event (which checks if
         # it's time to render the scene again).
         self.register_background_task(trainer_step_func)
+        self.dataset = dataset
 
     def init_wisp_state(self, wisp_state: WispState) -> None:
         """ A hook for applications to initialize specific fields inside the wisp state object.
