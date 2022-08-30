@@ -39,53 +39,48 @@ class DebugData(object):
         'rays' :  { 'points' : None, 'lines' : None },
         'octree' : { 'points' : None }
     }
+    dataset = None
 
     def add_mesh_points_lines(self, colorT = GREEN):
-        layers, points_layers_to_draw = get_obj_layers()
+        layers, layers_to_draw = get_obj_layers()
         # add points
         self.data['mesh']['points'] = PrimitivesPainter()
-        self.data['mesh']['points'].redraw(points_layers_to_draw)
+        self.data['mesh']['points'].redraw(layers_to_draw)
 
         # draw mesh
         self.data['mesh']['lines'] = PrimitivesPainter()
         self.data['mesh']['lines'].redraw(layers)
 
-    #         cloudLayer, dpoints_layers_to_draw = getDebugCloud(self.debugData.dataset, self.wisp_state)
+    #         cloudLayer, points_layers_to_draw = getDebugCloud(self.debug_data.dataset, self.wisp_state)
     def add_rays_points_lines(self, dataSet, colorT = GREEN):
-        #print("\n____initwisp_state.channels ", wisp_state.graph.channels["rgb"])
+        """
+        'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 'transform"""
+        """"""
         c = dataSet.coords
-        # print("c:", c)
-        rays = dataSet.data['rays']
+        rays = dataSet.data.get('rays')
         rgbs = dataSet.data["imgs"] 
         masks = dataSet.data["masks"]
-        depths = dataSet.data["masks"] #wisp_state.graph.channels["depth"] #Channel depth is usually a distance to the surface hit point
+        #depths = dataSet.data["depth"] #wisp_state.graph.channels["depth"] #Channel depth is usually a distance to the surface hit point
         # add points
-        dpoints_layers_to_draw = [PrimitivesPack()]
         points_layers_to_draw = [PrimitivesPack()]
+        layers_to_draw = [PrimitivesPack()]
         colorT = torch.FloatTensor([0, 1, 1, 1]) 
-        #octree_to_layers(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.blas.octree, level, colorT, dpoints_layers_to_draw[0])
 
         N = rays.origins.shape[0]
         for j in range(0, len(rays)):
-            # print(rays.shape, "rays[j]", rays[j].shape)
             for i in range(0, len(rays[j].origins)):
-                #points.append(rays[i].origins) 
-                #points_layers_to_draw[0].add_points(points[i], colorT)
-                #i, j:  39999 0 200 40000
-                #print("i, j: ", i, j, len(rays),  len(rays[j].origins)) #i, j:  0 0 200 40000
-                points_layers_to_draw[j].add_lines(rays[j][i].origins, rays[j][i].origins + rays[j][i].dirs, colorT)
-                dpoints_layers_to_draw[j].add_points(rays[j][i].origins)
+                layers_to_draw[j].add_lines(rays[j][i].origins, rays[j][i].origins + rays[j][i].dirs, colorT)
+                points_layers_to_draw[j].add_points(rays[j][i].origins, colorT)
             break
 
         # add points
         self.data['rays']['points'] = PrimitivesPainter()
-        self.data['rays']['points'].redraw(dpoints_layers_to_draw)
+        self.data['rays']['points'].redraw(points_layers_to_draw)
 
-        # draw mesh
         self.data['rays']['lines'] = PrimitivesPainter()
-        self.data['rays']['lines'].redraw(points_layers_to_draw)
+        self.data['rays']['lines'].redraw(layers_to_draw)
 
-    def add_octree(self, colorT = GREEN, levels=2):
+    def add_octree(self, colorT = GREEN, levels=2, scale=False):
         octreeAS = get_OctreeAS(levels)
         h = get_HashGrid()
         f = get_features_HashGrid(octreeAS.points, h, lod_idx=15)
@@ -100,10 +95,12 @@ class DebugData(object):
     def add_all(self):
         self.add_mesh_points_lines()
         self.add_octree()
-        #self.add_rays_points_lines()
+        print("____c:", self.dataset.data.get('rays'))
+        if self.dataset and self.dataset.data.get('rays'):
+            self.add_rays_points_lines(self.dataset)
 
-def init_debug_state(wisp_state, debugData):
-    for k1, v1 in debugData.items():
+def init_debug_state(wisp_state, debug_data):
+    for k1, v1 in debug_data.items():
         for k, _v in v1.items():
             wisp_state.debug[k1 + '_' + k] = False
 

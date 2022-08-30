@@ -65,7 +65,7 @@ class WidgetSceneGraph(WidgetImgui):
         visible_objects = state.debug
         if (key in visible_objects):
             tokens = key.split("_")
-            visibility_toggled, is_checked = imgui.checkbox("DEBUG " + tokens[0] + " as " + tokens[-1], visible_objects.get(key))
+            visibility_toggled, is_checked = imgui.checkbox(tokens[0] + " as " + tokens[-1], visible_objects.get(key))
             state.debug[key] = is_checked
             if visibility_toggled:
                 request_redraw(state)
@@ -122,8 +122,10 @@ class WidgetSceneGraph(WidgetImgui):
                         self.paint_object_checkbox(state, obj_id)
                         imgui.same_line()
                         if imgui.tree_node(obj_id, imgui.TREE_NODE_DEFAULT_OPEN):
-                            for k, _v in state.debug.items(): 
-                                self.paint_debug_checkbox(state, k)
+                            if imgui.tree_node("Debug draw:", imgui.TREE_NODE_DEFAULT_OPEN):
+                                for k, _v in state.debug.items(): 
+                                    self.paint_debug_checkbox(state, k)
+                                imgui.tree_pop()
 
                             imgui.text(f"Type:")
                             imgui.same_line()
