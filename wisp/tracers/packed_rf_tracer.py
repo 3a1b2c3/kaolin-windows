@@ -20,7 +20,6 @@ class PackedRFTracer(BaseTracer):
     This tracer class expects the use of a feature grid that has a BLAS (i.e. inherits the BLASGrid
     class).
     """
-
     def __init__(self, raymarch_type='voxel', num_steps=64, step_size=1.0, bg_color='white', **kwargs):
         """Set the default trace() arguments. """
         super().__init__(**kwargs)
@@ -83,7 +82,7 @@ class PackedRFTracer(BaseTracer):
         # and is governed by however the underlying feature grid class uses the BLAS to implement the sampling.
         ridx, pidx, samples, depths, deltas, boundary = nef.grid.raymarch(rays, 
                 level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
-
+        self.coords = samples # DEBUG
         timer.check("Raymarch")
 
         # Check for the base case where the BLAS traversal hits nothing
@@ -155,6 +154,7 @@ class PackedRFTracer(BaseTracer):
 
         extra_outputs = {}
         for channel in extra_channels:
+            #rgba
             feats = nef(coords=samples,
                         ray_d=hit_ray_d,
                         pidx=pidx,

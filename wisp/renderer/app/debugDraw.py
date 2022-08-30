@@ -35,6 +35,7 @@ RED = torch.FloatTensor([1, 0, 0, 1])
 
 class DebugData(object):
     data = {
+        'coords' : { 'points' : None },
         'mesh' :  { 'points' : None, 'lines' : None },
         'rays' :  { 'points' : None, 'lines' : None },
         'octree' : { 'points' : None }
@@ -64,7 +65,6 @@ class DebugData(object):
         # add points
         points_layers_to_draw = [PrimitivesPack()]
         layers_to_draw = [PrimitivesPack()]
-        colorT = torch.FloatTensor([0, 1, 1, 1]) 
 
         N = rays.origins.shape[0]
         for j in range(0, len(rays)):
@@ -80,6 +80,29 @@ class DebugData(object):
         self.data['rays']['lines'] = PrimitivesPainter()
         self.data['rays']['lines'].redraw(layers_to_draw)
 
+    def add_coords_points(self, wisp_state, colorT = GREEN):
+        """
+        'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 
+        'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 
+        transform == rays
+        needs to train to exist
+        ridx, pidx, samples, depths, deltas, boundary = nef.grid.raymarch(rays, 
+                level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
+        """
+        packedRFTracer = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].tracer
+        coords = packedRFTracer.coords
+        if coords:
+            print("___coords", coords[0], len(coords))
+            points_layers_to_draw = [PrimitivesPack()]
+            for j in range(0, len(coords)):
+                points_layers_to_draw[j].add_points(coords[j], colorT)
+
+            # add points
+            self.data['coords']['points'] = PrimitivesPainter()
+            self.data['coords']['points'].redraw(points_layers_to_draw)
+        else:
+            print("No ___coords")
+
     def add_octree(self, colorT = GREEN, levels=2, scale=False):
         octreeAS = get_OctreeAS(levels)
         h = get_HashGrid()
@@ -92,12 +115,13 @@ class DebugData(object):
         self.data['octree']['points'] = PrimitivesPainter()
         self.data['octree']['points'].redraw(o_layer)
 
-    def add_all(self):
+    def add_all(self, wisp_state=None):
         self.add_mesh_points_lines()
         self.add_octree()
-        print("____c:", self.dataset.data.get('rays'))
         if self.dataset and self.dataset.data.get('rays'):
             self.add_rays_points_lines(self.dataset)
+        if wisp_state and wisp_state.graph.neural_pipelines.get('test-ngp-nerf-interactive'):
+            self.add_coords_points(wisp_state)
 
 def init_debug_state(wisp_state, debug_data):
     for k1, v1 in debug_data.items():
@@ -119,9 +143,6 @@ def init_debug_state(wisp_state, debug_data):
             rgb = torch.cat((normalized_channel, normalized_channel, torch.zeros_like(normalized_channel)), dim=-1)
         elif channel_dim == 3:
             rgb = normalized_channel
-        else:
-            raise ValueError('Cannot display channels with more than 3 dimensions over the canvas.')
-            "imgs": rgbs, "masks": masks,
 
  Since the occupancy information is [compressed]
  (https://kaolin.readthedocs.io/en/latest/modules/kaolin.ops.spc.html?highlight=spc#octree) and 
