@@ -36,10 +36,13 @@ RED = torch.FloatTensor([1, 0, 0, 1])
 class DebugData(object):
     data = {
         'coords' : { 'points' : None },
-        'features' : { 'points' : None },
         'mesh' :  { 'points' : None, 'lines' : None },
         'rays' :  { 'points' : None, 'lines' : None },
         'octree' : { 'points' : None }
+    }
+    data_train = {
+        'coords' : { 'points' : None },
+        'features' : { 'points' : None }
     }
     dataset = None
 
@@ -56,7 +59,8 @@ class DebugData(object):
     #         cloudLayer, points_layers_to_draw = getDebugCloud(self.debug_data.dataset, self.wisp_state)
     def add_rays_points_lines(self, dataSet, colorT = GREEN):
         """
-        'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 'transform"""
+        'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 'img_shape', 'init',
+         'mip', 'multiview_dataset_format', 'num_imgs', 'root', 'transform"""
         """"""
         c = dataSet.coords
         rays = dataSet.data.get('rays')
@@ -106,8 +110,8 @@ class DebugData(object):
             # add points
             self.data['coords']['points'] = PrimitivesPainter()
             self.data['coords']['points'].redraw(points_layers_to_draw)
-        except:
-            print("No ___1coords", type(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
+        except Exception as e:
+            print("No ___1coords", e, type(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
 
     def add_octree(self, colorT = GREEN, levels=2, scale=False):
         octreeAS = get_OctreeAS(levels)

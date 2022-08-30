@@ -22,6 +22,9 @@ class BaseNeuralField(nn.Module):
 
     TODO(ttakikawa): More complete documentation here.
     """
+    coords = None
+    features = None
+
     def __init__(self, 
         grid_type          : str = 'OctreeGrid',
         interpolation_type : str = 'trilinear',
@@ -225,6 +228,7 @@ class BaseNeuralField(nn.Module):
                 return return_dict[channels]
             else:
                 return None
+                #torch.Size([107, 32])  __self.features:  torch.Size([107, 1, 3])
         elif isinstance(channels, list):
             return [return_dict[channel] for channel in channels]
         else:
