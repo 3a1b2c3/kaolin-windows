@@ -68,12 +68,7 @@ class DebugData(object):
 
         N = rays.origins.shape[0]
         for j in range(0, len(rays)):
-            # print(rays.shape, "rays[j]", rays[j].shape)
             for i in range(0, len(rays[j].origins)):
-                #points.append(rays[i].origins) 
-                #layers_to_draw[0].add_points(points[i], colorT)
-                #i, j:  39999 0 200 40000
-                #print("i, j: ", i, j, len(rays),  len(rays[j].origins)) #i, j:  0 0 200 40000
                 layers_to_draw[j].add_lines(rays[j][i].origins, rays[j][i].origins + rays[j][i].dirs, colorT)
                 points_layers_to_draw[j].add_points(rays[j][i].origins, colorT)
             break
