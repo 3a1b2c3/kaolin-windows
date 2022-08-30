@@ -103,6 +103,7 @@ class DebugData(object):
         features = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.features
         coords = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.coords
         try:
+            print(features.shape, "No ___1coords", coords.shape)
             points_layers_to_draw = [PrimitivesPack()]
             for j in range(0, len(coords)):
                 points_layers_to_draw[j].add_points(coords[j], colorT)
