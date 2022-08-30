@@ -36,6 +36,7 @@ RED = torch.FloatTensor([1, 0, 0, 1])
 class DebugData(object):
     data = {
         'coords' : { 'points' : None },
+        'features' : { 'points' : None },
         'mesh' :  { 'points' : None, 'lines' : None },
         'rays' :  { 'points' : None, 'lines' : None },
         'octree' : { 'points' : None }
@@ -88,20 +89,25 @@ class DebugData(object):
         needs to train to exist
         ridx, pidx, samples, depths, deltas, boundary = nef.grid.raymarch(rays, 
                 level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
+                        print("\n____init_wisp_state.neural_pipelines4", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
+        print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points))
+        print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points)
+        print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy)
         """
         packedRFTracer = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].tracer
-        coords = packedRFTracer.coords
-        if coords:
-            print("___coords", coords[0], len(coords))
+        neuralRadianceField = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
+        features = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.features
+        coords = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.coords
+        try:
             points_layers_to_draw = [PrimitivesPack()]
             for j in range(0, len(coords)):
                 points_layers_to_draw[j].add_points(coords[j], colorT)
-
+            print(len(coords),"___1coords", coords[0],  len(points_layers_to_draw.points))
             # add points
             self.data['coords']['points'] = PrimitivesPainter()
             self.data['coords']['points'].redraw(points_layers_to_draw)
-        else:
-            print("No ___coords")
+        except:
+            print("No ___1coords", type(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
 
     def add_octree(self, colorT = GREEN, levels=2, scale=False):
         octreeAS = get_OctreeAS(levels)

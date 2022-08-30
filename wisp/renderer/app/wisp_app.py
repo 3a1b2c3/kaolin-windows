@@ -115,7 +115,7 @@ class WispApp(ABC):
         self.canvas_dirty = False
         self.debug_data = DebugData()
         self.debug_data.dataset = dataset
-        print(" __dataset2: " , self.wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].tracer.coords) #tracer
+
         # Note: Normally pycuda.gl.autoinit should be invoked here after the window is created,
         # but wisp already initializes it when the library first loads. See wisp.app.cuda_guard.py
 
@@ -499,6 +499,7 @@ class WispApp(ABC):
                 print("no features")
             '''
         # mesh
+        self.debug_data.add_coords_points(self.wisp_state)
         for k1, v1 in self.debug_data.data.items():
             for k, _v in v1.items():
                 if self.wisp_state.debug.get(k1 + '_' + k):
