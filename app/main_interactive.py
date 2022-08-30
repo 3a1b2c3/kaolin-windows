@@ -43,7 +43,7 @@ if __name__ == "__main__":
         renderer = OptimizationApp(wisp_state=scene_state,
                                         trainer_step_func=trainer.iterate,
                                         experiment_name="wisp trainer",
-                                        #dataset=train_dataset
+                                        dataset=train_dataset
                                         )
         renderer.run()
     else:

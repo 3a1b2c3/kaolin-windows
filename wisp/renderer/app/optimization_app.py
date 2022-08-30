@@ -22,7 +22,8 @@ class OptimizationApp(WispApp):
 
     def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str,
                 dataset=None):
-        super().__init__(wisp_state, experiment_name)
+
+        super().__init__(wisp_state, experiment_name, dataset=dataset)
 
 
         # Tell the renderer to invoke the optimization step() function on every background iteration.
@@ -30,7 +31,6 @@ class OptimizationApp(WispApp):
         # The actual rendering will occur in-between these calls, invoked by the on_draw() event (which checks if
         # it's time to render the scene again).
         self.register_background_task(trainer_step_func)
-        self.dataset = dataset
 
     def init_wisp_state(self, wisp_state: WispState) -> None:
         """ A hook for applications to initialize specific fields inside the wisp state object.
