@@ -106,8 +106,6 @@ class PackedRFTracer(BaseTracer):
                 extra_outputs[channel] = torch.zeros(N, 3, device=ridx.device)
             return RenderBuffer(depth=depth, hit=hit, rgb=rgb, alpha=alpha, **extra_outputs)
         
-        #print(lod_idx, "___coords",  samples[0], len(samples)) grid?
-        #15 ___coords tensor([[ 0.8439, -0.9991,  0.9995]], device='cuda:0') 617
         timer.check("Boundary")
         
         # Get the indices of the ray tensor which correspond to hits
