@@ -34,7 +34,7 @@ from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid, get_features_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
-from .debugDraw import DebugData, init_debug_state
+from .debug_draw import DebugData, init_debug_state
 
 @contextmanager
 def cuda_activate(img):
