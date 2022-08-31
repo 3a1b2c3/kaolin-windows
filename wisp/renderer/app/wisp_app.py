@@ -34,7 +34,7 @@ from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid, get_features_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
-from .debugDraw import DebugData, init_debug_state
+from .debug_draw import DebugData, init_debug_state
 
 @contextmanager
 def cuda_activate(img):
@@ -115,7 +115,7 @@ class WispApp(ABC):
         self.canvas_dirty = False
         self.debug_data = DebugData()
         self.debug_data.dataset = dataset
-        print(" __dataset2: " , dir(self.debug_data.dataset))
+
         # Note: Normally pycuda.gl.autoinit should be invoked here after the window is created,
         # but wisp already initializes it when the library first loads. See wisp.app.cuda_guard.py
 
@@ -170,7 +170,7 @@ class WispApp(ABC):
         """
         # add debug
         init_debug_state(self.wisp_state, self.debug_data.data)
-        self.debug_data.add_all()
+        self.debug_data.add_all(self.wisp_state)
 
         gizmos = dict()
         planes = self.wisp_state.renderer.reference_grids
@@ -499,6 +499,7 @@ class WispApp(ABC):
                 print("no features")
             '''
         # mesh
+        self.debug_data.add_coords_points(self.wisp_state)
         for k1, v1 in self.debug_data.data.items():
             for k, _v in v1.items():
                 if self.wisp_state.debug.get(k1 + '_' + k):

@@ -32,7 +32,7 @@ import kaolin.ops.spc as spc_ops
 class NeuralRadianceField(BaseNeuralField):
     """Model for encoding radiance fields (density and plenoptic color)
     """
-    features = None
+
     def init_embedder(self):
         """Creates positional embedding functions for the position and view direction.
         """
@@ -48,7 +48,7 @@ class NeuralRadianceField(BaseNeuralField):
         """Initializes the decoder object. 
         """
         if self.multiscale_type == 'cat':
-            self.effective_feature_dim = self.grid.feature_dim * self.num_lods
+            self.effective_feature_dim = self.grid.feature_dim * self.num_lods #32
         else:
             self.effective_feature_dim = self.grid.feature_dim
 
@@ -153,11 +153,15 @@ class NeuralRadianceField(BaseNeuralField):
             lod_idx = len(self.grid.active_lods) - 1
         batch, num_samples, _ = coords.shape
         timer.check("rf_rgba_preprocess")
-        
+
         # Embed coordinates into high-dimensional vectors with the grid.  HashGrid
         feats = self.grid.interpolate(coords, lod_idx).reshape(-1, self.effective_feature_dim)
         #print(feats.shape, "self.effective_feature_dim: ", self.effective_feature_dim) im:  32
         self.features = feats
+        self.coords = coords
+        #print(self.effective_feature_dim) 32
+        #torch.Size([107, 32])  __self.features:  torch.Size([107, 1, 3])
+        print(self.features.shape, " __self.features: " , self.coords.shape)
         timer.check("rf_rgba_interpolate")
 
         # Optionally concat the positions to the embedding, and also concatenate embedded view directions.

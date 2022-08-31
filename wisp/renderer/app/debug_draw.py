@@ -15,8 +15,7 @@ import os, sys
 import torch
 
 from kaolin.render.camera import Camera
-from kaolin.io import utils
-from kaolin.io import obj
+from kaolin.io import utils, obj
 import kaolin.ops.spc as spc_ops
 
 from wisp.core.primitives import PrimitivesPack
@@ -33,11 +32,24 @@ from wisp.renderer.gizmos import PrimitivesPainter
 GREEN = torch.FloatTensor([0, 1, 0, 1])
 RED = torch.FloatTensor([1, 0, 0, 1]) 
 
+"""
+    Holds the settings of a single Bottom-Level renderer.
+    Wisp supports joint rendering of various pipelines (NeRF, SDFs, meshes, and so forth),
+    where each pipeline is wrapped by a bottom level renderer configured by this state object.
+    The state object exists throughout the lifecycle of the renderer / pipeline,
+    and is used to determine how the bottom level renderer of an existing pipeline is constructed.
+"""
+
 class DebugData(object):
     data = {
+        'coords' : { 'points' : None },
         'mesh' :  { 'points' : None, 'lines' : None },
         'rays' :  { 'points' : None, 'lines' : None },
         'octree' : { 'points' : None }
+    }
+    data_train = {
+        'coords' : { 'points' : None },
+        'features' : { 'points' : None }
     }
     dataset = None
 
@@ -54,7 +66,8 @@ class DebugData(object):
     #         cloudLayer, points_layers_to_draw = getDebugCloud(self.debug_data.dataset, self.wisp_state)
     def add_rays_points_lines(self, dataSet, colorT = GREEN):
         """
-        'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 'transform"""
+        'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 'img_shape', 'init',
+         'mip', 'multiview_dataset_format', 'num_imgs', 'root', 'transform"""
         """"""
         c = dataSet.coords
         rays = dataSet.data.get('rays')
@@ -64,7 +77,6 @@ class DebugData(object):
         # add points
         points_layers_to_draw = [PrimitivesPack()]
         layers_to_draw = [PrimitivesPack()]
-        colorT = torch.FloatTensor([0, 1, 1, 1]) 
 
         N = rays.origins.shape[0]
         for j in range(0, len(rays)):
@@ -80,6 +92,45 @@ class DebugData(object):
         self.data['rays']['lines'] = PrimitivesPainter()
         self.data['rays']['lines'].redraw(layers_to_draw)
 
+    def add_coords_points(self, wisp_state, colorT = GREEN):
+        """
+        'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 
+        'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 
+        transform == rays
+        needs to train to exist
+        print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points))
+        print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points)
+        print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy)
+        
+        ridx, pidx, samples, depths, deltas, boundary = nef.grid.raymarch(rays, 
+                level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
+        """
+        packedRFTracer = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].tracer
+        bl_state = wisp_state.graph.bl_renderers #dict_keys(['test-ngp-nerf-interactive'])
+        neuralRadianceField = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
+        features = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.features
+        #            coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3]
+        points_layers_to_draw = [PrimitivesPack()]
+        try:
+            #features = features.unsqueeze(0)
+            coords = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.coords
+            coords = torch.reshape(packedRFTracer.coords, (-1, 3)) 
+            #coords = torch.reshape(coords, (-1, 3))
+            #print(n, "__coords[0:1, 0:2, :3]", coords.shape, coords[0])
+            #torch.Size([86, 32]) No ___1coords torch.Size([86, 1, 3])
+            #coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3] space?
+            for i, x in enumerate(coords):
+                #print(x)
+                #for j in range(0, len(coords)):
+                points_layers_to_draw[0].add_points(x, colorT)
+            #print(len(coords),"___2coords", coords[0],  len(points_layers_to_draw.points))
+            # add points
+            self.data['coords']['points'] = PrimitivesPainter()
+            self.data['coords']['points'].redraw(points_layers_to_draw)
+            print(len(coords), features.shape, "0coords", coords.shape, points_layers_to_draw.points)
+        except Exception as e:
+            print("No ___1coords", e, type(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
+
     def add_octree(self, colorT = GREEN, levels=2, scale=False):
         octreeAS = get_OctreeAS(levels)
         h = get_HashGrid()
@@ -92,12 +143,13 @@ class DebugData(object):
         self.data['octree']['points'] = PrimitivesPainter()
         self.data['octree']['points'].redraw(o_layer)
 
-    def add_all(self):
+    def add_all(self, wisp_state=None):
         self.add_mesh_points_lines()
         self.add_octree()
-        print("____c:", self.dataset.data.get('rays'))
         if self.dataset and self.dataset.data.get('rays'):
             self.add_rays_points_lines(self.dataset)
+        if wisp_state and wisp_state.graph.neural_pipelines.get('test-ngp-nerf-interactive'):
+            self.add_coords_points(wisp_state)
 
 def init_debug_state(wisp_state, debug_data):
     for k1, v1 in debug_data.items():
@@ -119,9 +171,6 @@ def init_debug_state(wisp_state, debug_data):
             rgb = torch.cat((normalized_channel, normalized_channel, torch.zeros_like(normalized_channel)), dim=-1)
         elif channel_dim == 3:
             rgb = normalized_channel
-        else:
-            raise ValueError('Cannot display channels with more than 3 dimensions over the canvas.')
-            "imgs": rgbs, "masks": masks,
 
  Since the occupancy information is [compressed]
  (https://kaolin.readthedocs.io/en/latest/modules/kaolin.ops.spc.html?highlight=spc#octree) and 

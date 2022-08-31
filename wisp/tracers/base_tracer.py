@@ -13,7 +13,9 @@ import inspect
 
 class BaseTracer(nn.Module, ABC):
     """Virtual base class for tracer"""
-    
+    coords = None
+    composite_feats = None
+
     def __init__(self, **kwargs):
         """Initializes the tracer class and sets the default arguments for trace.
 
