@@ -424,8 +424,6 @@ def get_modules_from_config(args):
                     if args.tree_type == 'quad':
                         pipeline.nef.grid.init_from_octree(args.base_lod, args.num_lods)
                     elif args.tree_type == 'geometric':
-                        #print("Hashgrid")
-                        vertices, faces = get_obj()
                         pipeline.nef.grid.init_from_geometric(16, args.max_grid_res, args.num_lods)
                     else:
                         raise NotImplementedError

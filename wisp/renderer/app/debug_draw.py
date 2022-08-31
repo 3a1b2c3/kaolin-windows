@@ -98,8 +98,6 @@ class DebugData(object):
         'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 
         transform == rays
         needs to train to exist
-
-                        print("\n____init_wisp_state.neural_pipelines4", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
         print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points))
         print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points)
         print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy)
@@ -116,14 +114,11 @@ class DebugData(object):
         try:
             #features = features.unsqueeze(0)
             coords = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.coords
-            n = coords.shape[0]
             coords = torch.reshape(packedRFTracer.coords, (-1, 3)) 
-            coords = torch.reshape(coords, (-1, 3))
+            #coords = torch.reshape(coords, (-1, 3))
             #print(n, "__coords[0:1, 0:2, :3]", coords.shape, coords[0])
             #torch.Size([86, 32]) No ___1coords torch.Size([86, 1, 3])
-            #torch.Size([277985, 1, 32]) No ___1coords torch.Size([277985, 1, 3])
             #coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3] space?
-            #tensor([[[ 0.9338, -0.9911,  0.9973]],[[ 0.9316, -0.9997,  0.9892]],
             for i, x in enumerate(coords):
                 #print(x)
                 #for j in range(0, len(coords)):
