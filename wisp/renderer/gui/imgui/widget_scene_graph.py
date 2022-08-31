@@ -29,8 +29,6 @@ def item_width(width=None):
 def input_text(label, value, buffer_length=400, flags=None, width=None, help_text=''):
     old_value = value
     color = list(imgui.get_style().colors[imgui.COLOR_TEXT])
-    if value == '':
-        color[-1] *= 0.5
     with item_width(width):
         imgui.push_style_color(imgui.COLOR_TEXT, *color)
         value = value if value != '' else help_text
@@ -148,10 +146,10 @@ class WidgetSceneGraph(WidgetImgui):
                                 value = "C:"
                                 changed, value = input_text("Path:", value)
                                 imgui.same_line()
-                                if imgui.button("Find", width=50):
+                                if imgui.button("Find", width=30):
                                     pass
                                 if imgui.button("Add", width=100):
-                                    pass #filtered_text_input_buf_pass
+                                    print(changed, "value: ", value)
                                 imgui.same_line()
                                 if imgui.button("Merge", width=100):
                                     pass 
