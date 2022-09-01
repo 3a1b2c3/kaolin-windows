@@ -34,7 +34,7 @@ from wisp.ops.spc.conversions import mesh_to_spc
 from wisp.ops.test_mesh import get_obj_layers, get_OctreeAS, octree_to_layers, get_HashGrid, get_features_HashGrid
 from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from_octree
 from wisp.ops.spc_formatting import describe_octree
-from .debug_draw import DebugData, init_debug_state
+from .debug_draw import DebugData, init_debug_state, render_debug
 
 @contextmanager
 def cuda_activate(img):
@@ -169,7 +169,7 @@ class WispApp(ABC):
         For example: world grid, axes painter.
         """
         # add debug
-        init_debug_state(self.wisp_state, self.debug_data.data)
+        init_debug_state(self.wisp_state, self.debug_data)
         self.debug_data.add_all(self.wisp_state)
 
         gizmos = dict()
@@ -489,16 +489,8 @@ class WispApp(ABC):
             gizmo.render(camera)
         self.prim_painter.render(camera)
 
-        # after training
-        if (hasattr(self.wisp_state.graph, 'neural_pipeline') and 'test-ngp-nerf-interactive'  in self.wisp_state.graph.neural_pipeline):
-            nef = self.wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
-            ''' 
-            if nef.features.size:
-                print(nef.features.shape, "__________nef.features: ")#torch.Size([42, 32]) 0,1
-            else:
-                print("no features")
-            '''
-        # mesh
+        # debug draw
+        # render_debug(self.debug_data, self.wisp_state, camera)
         self.debug_data.add_coords_points(self.wisp_state)
         for k1, v1 in self.debug_data.data.items():
             for k, _v in v1.items():
