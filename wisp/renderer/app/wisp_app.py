@@ -490,14 +490,7 @@ class WispApp(ABC):
         self.prim_painter.render(camera)
 
         # debug draw
-        # render_debug(self.debug_data, self.wisp_state, camera)
-        self.debug_data.add_coords_points(self.wisp_state)
-        for k1, v1 in self.debug_data.data.items():
-            for k, _v in v1.items():
-                if self.wisp_state.debug.get(k1 + '_' + k):
-                    if self.debug_data.data.get(k1).get(k):
-                        self.debug_data.data.get(k1).get(k).render(camera)
-
+        render_debug(self.debug_data, self.wisp_state, camera)
 
         self.canvas_dirty = False
 
