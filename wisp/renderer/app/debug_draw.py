@@ -30,6 +30,8 @@ from wisp.ops.spc_formatting import describe_octree
 from wisp.renderer.gizmos import PrimitivesPainter
 
 testNgpNerfInteractive = "test-ngp-nerf-interactive"
+testNglodSdfInteractive = "test-nglod-sdf-interactive"
+#   exp_name: 'vqad-nerf-interactive' vector-quantized auto-decoder 
 
 GREEN = torch.FloatTensor([0, 1, 0, 1])
 RED = torch.FloatTensor([1, 0, 0, 1]) 
