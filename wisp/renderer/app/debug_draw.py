@@ -94,7 +94,7 @@ class DebugData(object):
         self.data['rays']['lines'] = PrimitivesPainter()
         self.data['rays']['lines'].redraw(layers_to_draw)
 
-    def add_coords_points(self, wisp_state, colorT = GREEN):
+    def add_feature_points(self, wisp_state, lodix=15, colorT=GREEN):
         """
         'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 
         'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 
@@ -112,7 +112,6 @@ class DebugData(object):
         neuralRadianceField = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef
         features = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.features
         #            coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3]
-        points_layers_to_draw = [PrimitivesPack()]
         try:
             #features = features.unsqueeze(0)
             coords = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.coords
@@ -121,15 +120,35 @@ class DebugData(object):
             #print(n, "__coords[0:1, 0:2, :3]", coords.shape, coords[0])
             #torch.Size([86, 32]) No ___1coords torch.Size([86, 1, 3])
             #coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3] space?
-            for i, x in enumerate(coords):
+            points_layers_to_draw = [PrimitivesPack()]
+            for _i, x in enumerate(coords):
                 #print(x)
                 #for j in range(0, len(coords)):
                 points_layers_to_draw[0].add_points(x, colorT)
             #print(len(coords),"___2coords", coords[0],  len(points_layers_to_draw.points))
             # add points
+            if not self.data['features']['points']:
+                self.data['features']['points'] = PrimitivesPainter()
+            self.data['features']['points'].redraw(points_layers_to_draw)
+            print(len(coords), features.shape, "0coords", coords.shape, points_layers_to_draw.points)
+        except Exception as e:
+            print(e, " ___1coords", type(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef))
+
+
+    def add_coords_points(self, wisp_state, colorT = GREEN):
+        packedRFTracer = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].tracer
+        points_layers_to_draw = [PrimitivesPack()]
+        try:
+            coords = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.coords
+            coords = torch.reshape(packedRFTracer.coords, (-1, 3)) 
+            #coords = torch.reshape(coords, (-1, 3))
+            for _i, x in enumerate(coords):
+                points_layers_to_draw[0].add_points(x, colorT)
+            # add points
             self.data['coords']['points'] = PrimitivesPainter()
             self.data['coords']['points'].redraw(points_layers_to_draw)
-            print(len(coords), features.shape, "0coords", coords.shape, points_layers_to_draw.points)
+            self.data_train['coords']['points'] = PrimitivesPainter()
+            self.data_train['coords']['points'].redraw(points_layers_to_draw)
         except Exception as e:
             print("No ___1coords", e, type(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef))
 
@@ -163,11 +182,13 @@ def init_debug_state(wisp_state, debug_data):
 
 def render_debug(debug_data, wisp_state, camera):
     debug_data.add_coords_points(wisp_state)
+
     for k1, v1 in debug_data.data.items():
         for k, _v in v1.items():
             if wisp_state.debug.get(k1 + '_' + k):
                 if debug_data.data.get(k1).get(k):
                     debug_data.data.get(k1).get(k).render(camera)
+
     for k1, v1 in debug_data.data_train.items():
         for k, _v in v1.items():
             if wisp_state.debug.get(k1 + '_' + k):
