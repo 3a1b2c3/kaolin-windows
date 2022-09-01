@@ -33,7 +33,7 @@ testNgpNerfInteractive = "test-ngp-nerf-interactive"
 
 GREEN = torch.FloatTensor([0, 1, 0, 1])
 RED = torch.FloatTensor([1, 0, 0, 1]) 
-
+BLUE = torch.FloatTensor([0, 0, 1, 1]) 
 """
     Holds the settings of a single Bottom-Level renderer.
     Wisp supports joint rendering of various pipelines (NeRF, SDFs, meshes, and so forth),
@@ -50,11 +50,12 @@ class DebugData(object):
     }
     data_train = {
         'coords' : { 'points' : None },
+        'dense' : { 'points' : None },
         'features' : { 'points' : None }
     }
     dataset = None
 
-    def add_mesh_points_lines(self, colorT = GREEN):
+    def add_mesh_points_lines(self, colorT=GREEN):
         layers, layers_to_draw = get_obj_layers()
         # add points
         self.data['mesh']['points'] = PrimitivesPainter()
@@ -65,7 +66,7 @@ class DebugData(object):
         self.data['mesh']['lines'].redraw(layers)
 
     #         cloudLayer, points_layers_to_draw = getDebugCloud(self.debug_data.dataset, self.wisp_state)
-    def add_rays_points_lines(self, dataSet, colorT = GREEN):
+    def add_rays_points_lines(self, dataSet, colorT=GREEN):
         """
         'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 'img_shape', 'init',
          'mip', 'multiview_dataset_format', 'num_imgs', 'root', 'transform"""
@@ -93,46 +94,59 @@ class DebugData(object):
         self.data['rays']['lines'] = PrimitivesPainter()
         self.data['rays']['lines'].redraw(layers_to_draw)
 
-    def add_feature_points(self, wisp_state, lodix=15, colorT=GREEN):
+    def add_feature_points(self, wisp_state, lodix=15, colorT=BLUE):
         """
         'coords', 'data', 'dataset_num_workers', 'get_images', 'get_img_samples', 
         'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 
         transform == rays
         needs to train to exist
-        print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.dense_points))
+
         print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.dense_points)
         print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.occupancy)
         
         ridx, pidx, samples, depths, deltas, boundary = nef.grid.raymarch(rays, 
                 level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
         """
-        packedRFTracer = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].tracer
-        bl_state = wisp_state.graph.bl_renderers #dict_keys([testNgpNerfInteractive])
-        neuralRadianceField = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef
-        features = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.features
-        #            coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3]
         try:
             #features = features.unsqueeze(0)
-            coords = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.coords
-            coords = torch.reshape(packedRFTracer.coords, (-1, 3)) 
-            #coords = torch.reshape(coords, (-1, 3))
+            bl_state = wisp_state.graph.bl_renderers #dict_keys([testNgpNerfInteractive])
+            features = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.features
+            #     coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3]
+            features = torch.reshape(features, (-1, 3))
             #print(n, "__coords[0:1, 0:2, :3]", coords.shape, coords[0])
             #torch.Size([86, 32]) No ___1coords torch.Size([86, 1, 3])
             #coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3] space?
             points_layers_to_draw = [PrimitivesPack()]
-            for _i, x in enumerate(coords):
+            for _i, x in enumerate(features):
                 #print(x)
                 #for j in range(0, len(coords)):
                 points_layers_to_draw[0].add_points(x, colorT)
             #print(len(coords),"___2coords", coords[0],  len(points_layers_to_draw.points))
             # add points
-            if not self.data['features']['points']:
-                self.data['features']['points'] = PrimitivesPainter()
-            self.data['features']['points'].redraw(points_layers_to_draw)
-            print(len(coords), features.shape, "0coords", coords.shape, points_layers_to_draw.points)
+            if not self.data_train['features']['points']:
+                self.data_train['features']['points'] = PrimitivesPainter()
+            self.data_train['features']['points'].redraw(points_layers_to_draw)
+            print(features.shape, "0coords", features.shape, points_layers_to_draw.points)
         except Exception as e:
             print(e, " ___1coords", type(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef))
 
+    def add_dense_points(self, wisp_state, colorT=RED):
+        """
+        self.dense_points = spc_ops.unbatched_get_level_points(self.blas.points, self.blas.pyramid, self.blas_level).clone() # unused?
+        self.num_cells = self.dense_points.shape[0]
+        self.occupancy = torch.ones(self.num_cells) * 20.0
+        """
+        try:
+            coords = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.dense_points
+            points_layers_to_draw = [PrimitivesPack()]
+            for _i, x in enumerate(coords):
+                points_layers_to_draw[0].add_points(x, colorT)
+            # add points
+            if not self.data_train['dense']['points']:
+                self.data_train['dense']['points'] = PrimitivesPainter()
+            self.data_train['dense']['points'].redraw(points_layers_to_draw)
+        except Exception as e:
+            print("No ___dense", e, type(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef))
 
     def add_coords_points(self, wisp_state, colorT = GREEN):
         packedRFTracer = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].tracer
@@ -144,7 +158,8 @@ class DebugData(object):
             for _i, x in enumerate(coords):
                 points_layers_to_draw[0].add_points(x, colorT)
             # add points
-            self.data_train['coords']['points'] = PrimitivesPainter()
+            if not self.data_train['coords']['points']:
+                self.data_train['coords']['points'] = PrimitivesPainter()
             self.data_train['coords']['points'].redraw(points_layers_to_draw)
         except Exception as e:
             print("No ___1coords", e, type(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef))
@@ -180,6 +195,10 @@ def init_debug_state(wisp_state, debug_data):
 def render_debug(debug_data, wisp_state, camera):
     if wisp_state.debug.get('coords_points'):
         debug_data.add_coords_points(wisp_state)
+    if wisp_state.debug.get('dense_points'):
+        debug_data.add_dense_points(wisp_state)
+    if wisp_state.debug.get('feature_points'):
+        debug_data.add_feature_points(wisp_state)
 
     for k1, v1 in debug_data.data.items():
         for k, _v in v1.items():
