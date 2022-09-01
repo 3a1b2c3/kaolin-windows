@@ -29,6 +29,8 @@ from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from
 from wisp.ops.spc_formatting import describe_octree
 from wisp.renderer.gizmos import PrimitivesPainter
 
+testNgpNerfInteractive = "test-ngp-nerf-interactive"
+
 GREEN = torch.FloatTensor([0, 1, 0, 1])
 RED = torch.FloatTensor([1, 0, 0, 1]) 
 
@@ -98,22 +100,22 @@ class DebugData(object):
         'img_shape', 'init', 'mip', 'multiview_dataset_format', 'num_imgs', 'root', 
         transform == rays
         needs to train to exist
-        print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points))
-        print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points)
-        print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy)
+        print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.dense_points))
+        print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.dense_points)
+        print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.occupancy)
         
         ridx, pidx, samples, depths, deltas, boundary = nef.grid.raymarch(rays, 
                 level=nef.grid.active_lods[lod_idx], num_samples=num_steps, raymarch_type=raymarch_type)
         """
-        packedRFTracer = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].tracer
-        bl_state = wisp_state.graph.bl_renderers #dict_keys(['test-ngp-nerf-interactive'])
-        neuralRadianceField = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef
-        features = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.features
+        packedRFTracer = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].tracer
+        bl_state = wisp_state.graph.bl_renderers #dict_keys([testNgpNerfInteractive])
+        neuralRadianceField = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef
+        features = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.features
         #            coords (torch.FloatTensor): packed tensor of shape [batch, num_samples, 3]
         points_layers_to_draw = [PrimitivesPack()]
         try:
             #features = features.unsqueeze(0)
-            coords = wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.coords
+            coords = wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.coords
             coords = torch.reshape(packedRFTracer.coords, (-1, 3)) 
             #coords = torch.reshape(coords, (-1, 3))
             #print(n, "__coords[0:1, 0:2, :3]", coords.shape, coords[0])
@@ -129,7 +131,7 @@ class DebugData(object):
             self.data['coords']['points'].redraw(points_layers_to_draw)
             print(len(coords), features.shape, "0coords", coords.shape, points_layers_to_draw.points)
         except Exception as e:
-            print("No ___1coords", e, type(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
+            print("No ___1coords", e, type(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef))
 
     def add_octree(self, colorT = GREEN, levels=2, scale=False):
         octreeAS = get_OctreeAS(levels)
@@ -148,13 +150,32 @@ class DebugData(object):
         self.add_octree()
         if self.dataset and self.dataset.data.get('rays'):
             self.add_rays_points_lines(self.dataset)
-        if wisp_state and wisp_state.graph.neural_pipelines.get('test-ngp-nerf-interactive'):
+        if wisp_state and wisp_state.graph.neural_pipelines.get(testNgpNerfInteractive):
             self.add_coords_points(wisp_state)
 
 def init_debug_state(wisp_state, debug_data):
-    for k1, v1 in debug_data.items():
+    for k1, v1 in debug_data.data_train.items():
         for k, _v in v1.items():
             wisp_state.debug[k1 + '_' + k] = False
+    for k1, v1 in debug_data.data.items():
+        for k, _v in v1.items():
+            wisp_state.debug[k1 + '_' + k] = False
+
+def render_debug(debug_data, wisp_state, camera):
+    debug_data.add_coords_points(wisp_state)
+    for k1, v1 in debug_data.data.items():
+        for k, _v in v1.items():
+            if wisp_state.debug.get(k1 + '_' + k):
+                if debug_data.data.get(k1).get(k):
+                    debug_data.data.get(k1).get(k).render(camera)
+    for k1, v1 in debug_data.data_train.items():
+        for k, _v in v1.items():
+            if wisp_state.debug.get(k1 + '_' + k):
+                if (k1 in ['coords']):
+                    debug_data.add_coords_points(wisp_state)
+                if debug_data.data_train.get(k1).get(k):
+                    debug_data.data_train.get(k1).get(k).render(camera)
+
 
 '''
         # Normalize channel to [0, 1]
@@ -194,12 +215,12 @@ The `pyramid` field does exactly that: it keeps summarizes the number of occupie
         print("\n____initwisp_state.channels ", wisp_state.graph.channels.keys())
         print("\n____init_wisp_state.neural_pipelines1", dir(wisp_state.graph.channels["depth"])) # Channel
         print("\n____init_wisp_state.neural_pipelines2", wisp_state.graph.channels["hit"])
-        print("\n____init_wisp_state.nesural_pipelines3", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].named_parameters)
-        print("\n____init_wisp_state.neural_pipelines4", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef))
-        print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points))
-        print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.dense_points)
-        print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].nef.grid.occupancy) #([20., 20., 20.,  ..., 20., 20., 20.])
-        #print("\n____init_wisp_state.neural_pipelines5", wisp_state.graph.neural_pipelines['test-ngp-nerf-interactive'].state_dict)
+        print("\n____init_wisp_state.nesural_pipelines3", wisp_state.graph.neural_pipelines[testNgpNerfInteractive].named_parameters)
+        print("\n____init_wisp_state.neural_pipelines4", dir(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef))
+        print("\n____init_wisp_state.neural_pipelines6", dir(wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.dense_points))
+        print("\n____init_wisp_state.neural_pipelines7", wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.dense_points)
+        print("\n____init_wisp_state.neural_pipelines8", wisp_state.graph.neural_pipelines[testNgpNerfInteractive].nef.grid.occupancy) #([20., 20., 20.,  ..., 20., 20., 20.])
+        #print("\n____init_wisp_state.neural_pipelines5", wisp_state.graph.neural_pipelines[testNgpNerfInteractive].state_dict)
         #rays
         #create_pointcloud_from_images(wisp_state.graph.channels["rgb"])
 
