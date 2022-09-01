@@ -44,7 +44,6 @@ RED = torch.FloatTensor([1, 0, 0, 1])
 
 class DebugData(object):
     data = {
-        'coords' : { 'points' : None },
         'mesh' :  { 'points' : None, 'lines' : None },
         'rays' :  { 'points' : None, 'lines' : None },
         'octree' : { 'points' : None }
@@ -145,8 +144,6 @@ class DebugData(object):
             for _i, x in enumerate(coords):
                 points_layers_to_draw[0].add_points(x, colorT)
             # add points
-            self.data['coords']['points'] = PrimitivesPainter()
-            self.data['coords']['points'].redraw(points_layers_to_draw)
             self.data_train['coords']['points'] = PrimitivesPainter()
             self.data_train['coords']['points'].redraw(points_layers_to_draw)
         except Exception as e:
@@ -181,7 +178,8 @@ def init_debug_state(wisp_state, debug_data):
             wisp_state.debug[k1 + '_' + k] = False
 
 def render_debug(debug_data, wisp_state, camera):
-    debug_data.add_coords_points(wisp_state)
+    if wisp_state.debug.get('coords_points'):
+        debug_data.add_coords_points(wisp_state)
 
     for k1, v1 in debug_data.data.items():
         for k, _v in v1.items():
@@ -192,8 +190,6 @@ def render_debug(debug_data, wisp_state, camera):
     for k1, v1 in debug_data.data_train.items():
         for k, _v in v1.items():
             if wisp_state.debug.get(k1 + '_' + k):
-                if (k1 in ['coords']):
-                    debug_data.add_coords_points(wisp_state)
                 if debug_data.data_train.get(k1).get(k):
                     debug_data.data_train.get(k1).get(k).render(camera)
 
