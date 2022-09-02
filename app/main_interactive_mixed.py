@@ -14,10 +14,49 @@ ___args <class 'argparse.Namespace'>
 Be aware that for now, the neural fields we optimize are assumed to exist in the normalized range of -1 to 1
  (supporting per instance model matrix is on our short-term roadmap)
 '''
-argsSdf =  {'trainer_type': 'SDFTrainer', 'exp_name': 'test-nglod-sdf', 'perf': False, 'detect_anomaly': False, 'config': 'configs/nglod_sdf.yaml', 'grid_type': 'OctreeGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'voxel', 'multiscale_type': 'sum', 'feature_dim': 16, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 6, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'quad', 'codebook_bitwidth': 8, 'embedder_type': 'none', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralSDF', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 1, 'skip': None, 'pretrained': None, 'position_input': True, 'dataset_type': 'sdf', 'dataset_path': 'D:\\workspace\\INTEGRATION\\kaolin-wisp\\data\\test\\obj\\1.obj', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 'get_normals': False, 'num_samples': 500000, 'num_samples_on_mesh': 10000000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 32, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'white', 'mip': None, 'optimizer_type': 'adam', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 1.0, 'rgb_loss': 1.0, 'epochs': 10, 'batch_size': 512, 'resample': True, 'only_last': True, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': 5, 'render_every': 5, 'log_2d': True, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': 20, 'render_res': [1024, 1024], 'render_batch': 0, 'camera_origin': [-2.8, 2.3, -2.8], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedSDFTracer', 'num_steps': 128, 'step_size': 0.8, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': True, 'shading_mode': 'matcap', 'log_level': 20}
-argsNef = {'trainer_type': 'MultiviewTrainer', 'exp_name': 'test-ngp-nerf-interactive', 'perf': False, 'detect_anomaly': False, 'config': 'configs/ngp_nerf_interactive.yaml', 'grid_type': 'HashGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'ray', 'multiscale_type': 'cat', 'feature_dim': 2, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 16, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'geometric', 'codebook_bitwidth': 19, 'embedder_type': 'positional', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralRadianceField', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 4, 'skip': None, 'pretrained': None, 'position_input': False, 'dataset_type': 'multiview', 'dataset_path': 'd:\\workspace\\INTEGRATION\\kaolin-wisp\\data\\test\\results_test_nored_200', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 'get_normals': False, 'num_samples': 100000, 'num_samples_on_mesh': 1000000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 256, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'black', 'mip': 2, 'optimizer_type': 'rmsprop', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 100.0, 'rgb_loss': 1.0, 'epochs': 50, 'batch_size': 1, 'resample': False, 'only_last': False, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': -1, 'render_every': -1, 'log_2d': False, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': -1, 'render_res': [1024, 1024], 'render_batch': 4000, 'camera_origin': [-3.0, 0.65, -3.0], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedRFTracer', 'num_steps': 512, 'step_size': 1.0, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': False, 'shading_mode': 'rb', 'log_level': 20}
+argsSdf = {'trainer_type': 'SDFTrainer', 'exp_name': 'test-nglod-sdf', 'perf': False, 'detect_anomaly': False, 'config': 'configs/nglod_sdf.yaml', 'grid_type': 'OctreeGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'voxel', 'multiscale_type': 'sum', 'feature_dim': 16, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 6, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'quad', 'codebook_bitwidth': 8, 'embedder_type': 'none', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralSDF', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 1, 'skip': None, 'pretrained': None, 'position_input': True, 'dataset_type': 'sdf', 'dataset_path': 'D:\\workspace\\INTEGRATION\\kaolin-wisp\\data\\test\\obj\\1.obj', 'dataset_num_workers': -1, 
+'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 'get_normals': False, 'num_samples': 500000, 
+'num_samples_on_mesh': 10000000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 32, 
+'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'white', 'mip': None, 'optimizer_type': 'adam',
+ 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 1.0, 'rgb_loss': 1.0, 'epochs': 10, 'batch_size': 512, 'resample': True, 'only_last': True,
+ 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': 5, 'render_every': 5, 'log_2d': True, 
+ 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 
+ 'valid_every': 20, 'render_res': [1024, 1024], 'render_batch': 0, 'camera_origin': [-2.8, 2.3, -2.8], 'camera_lookat': [0, 0, 0], 
+ 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedSDFTracer', 'num_steps': 128, 'step_size': 0.8, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': True, 'shading_mode': 'matcap', 'log_level': 20}
+
+argsNef = {'trainer_type': 'MultiviewTrainer', 'exp_name': 'test-ngp-nerf-interactive', 'perf': False, 'detect_anomaly': False, 'config': 'configs/ngp_nerf_interactive.yaml', 'grid_type': 'HashGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'ray', 'multiscale_type': 'cat', 'feature_dim': 2, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 16, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'geometric', 'codebook_bitwidth': 19, 'embedder_type': 'positional', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralRadianceField', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 4, 'skip': None, 'pretrained': None, 'position_input': False, 'dataset_type': 'multiview', 'dataset_path': 'd:\\workspace\\INTEGRATION\\kaolin-wisp\\data\\test\\results_test_nored_200', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 
+'get_normals': False, 'num_samples': 100000, 'num_samples_on_mesh': 1000000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 256, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'black', 'mip': 2, 'optimizer_type': 'rmsprop', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 100.0, 'rgb_loss': 1.0, 'epochs': 50, 'batch_size': 1, 'resample': False, 'only_last': False, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': -1, 'render_every': -1, 'log_2d': False, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': -1, 'render_res': [1024, 1024], 'render_batch': 4000, 'camera_origin': [-3.0, 0.65, -3.0], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedRFTracer', 'num_steps': 512, 'step_size': 1.0, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': False, 'shading_mode': 'rb', 'log_level': 20}
 argsSdfInter = {'trainer_type': 'SDFTrainer', 'exp_name': 'test-nglod-sdf-interactive', 'perf': False, 'detect_anomaly': False, 
 'config': 'configs/nglod_sdf_interactive.yaml', 'grid_type': 'OctreeGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'voxel', 'multiscale_type': 'sum', 'feature_dim': 16, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 6, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'quad', 'codebook_bitwidth': 8, 'embedder_type': 'none', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralSDF', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 1, 'skip': None, 'pretrained': None, 'position_input': True, 'dataset_type': 'sdf', 'dataset_path': 'D:\\workspace\\INTEGRATION\\kaolin-wisp\\data\\test\\obj\\1.obj', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 'get_normals': False, 'num_samples': 500000, 'num_samples_on_mesh': 10000000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 32, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'white', 'mip': None, 'optimizer_type': 'adam', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 1.0, 'rgb_loss': 1.0, 'epochs': 10, 'batch_size': 512, 'resample': True, 'only_last': True, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': -1, 'render_every': -1, 'log_2d': True, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': -1, 'render_res': [1024, 1024], 'render_batch': 0, 'camera_origin': [-2.8, 2.3, -2.8], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedSDFTracer', 'num_steps': 128, 'step_size': 0.8, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': True, 'shading_mode': 'matcap', 'log_level': 20}
+
+class Object(object):
+    dataset_type = None
+    nef_type = None
+    tracer_type = None
+    pretrained = False
+    sample_mode = None
+    num_samples = 500000 
+    num_samples_on_mesh = 10000000
+    get_normals = False
+    sample_tex = False 
+    valid_only = False
+    interpolation_type = 'linear'
+    samples_per_voxel = 32
+    dataset_path = r"D:\workspace\INTEGRATION\kaolin-wisp\data\test\obj\1.obj"
+    extra_args = { "perf" : None, 
+     "dataset_path" : r"D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj" }
+    epochs  = None
+    batch_size = None
+    lr = 0.001
+    grid_lr_weight = 1.0
+    weight_decay = None
+    log_dir = None
+    exp_name = 'test-nglod-sdf-interactive'
+    save_every = -1
+    render_every = -1
+    valid_every =  -1
+    trainer_type = 'SDFTrainer'
+
 
 if __name__ == "__main__":
     from cuda_guard import setup_cuda_context
@@ -37,24 +76,25 @@ if __name__ == "__main__":
     app_group = parser.add_argument_group('app')
     # Add custom args if needed for app
     args, args_str = argparse_to_str(parser)
+    app_utils.default_log_setup(args.log_level)
     #___args ArgumentParser(prog='main_interactive_mixed.py', usage=None, description='ArgumentParser for kaolin-wisp.',
     #  formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
     # Create the parser
-    parserNerf = argparse.ArgumentParser()
-    # Add an argument
-    parserNerf.add_argument('--config', default="configs/ngp_nerf_interactive.yaml")
-    parserNerf.add_argument('--dataset-path', default="d:/workspace/INTEGRATION/kaolin-wisp/data/test/results_test_nored_200")
-    #argsNErf, args_strNErf = argparse_to_str(parserNerf)
-    #print("___args", parserNerf)#, vars(args)) #___args <class 'argparse.Namespace'>
+    sdF_args = Object()
+    sdF_args.dataset_type = "sdf"
+    sdF_args.nef_type = 'NeuralSDF'   
+    sdF_args.tracer_type = 'PackedSDFTracer'
+    sdF_args.sample_mode = ['rand', 'near', 'near', 'trace', 'trace']
 
-    app_utils.default_log_setup(args.log_level)
+    pipeline1, train_dataset1, device = get_modules_from_config(sdF_args)
+    #print(" pipeline", pipeline) #neural_pipelines.items():
 
     pipeline, train_dataset, device = get_modules_from_config(args)
-    #pipeline1, train_dataset1, device = get_modules_from_config(argsNErf)
-    #print(" pipeline", pipeline) #neural_pipelines.items():
+
 
     optim_cls, optim_params = get_optimizer_from_config(args)
     scene_state = WispState()
+ 
     trainer = globals()[args.trainer_type](pipeline, train_dataset, args.epochs, args.batch_size,
                                       optim_cls, args.lr, args.weight_decay,
                                       args.grid_lr_weight, optim_params, args.log_dir, device,
@@ -64,14 +104,15 @@ if __name__ == "__main__":
     print("scene_state", scene_state.graph.neural_pipelines.keys())
     #   for renderer_id, neural_pipeline in scene_graph.neural_pipelines.items():
     scene_state1 = WispState()
-    trainerSDf = globals()[args.trainer_type](pipeline, train_dataset, args.epochs, args.batch_size,
+    args = sdF_args 
+    trainerSDf = globals()[args.trainer_type](pipeline1, train_dataset1, args.epochs, args.batch_size,
                                       optim_cls, args.lr, args.weight_decay,
                                       args.grid_lr_weight, optim_params, args.log_dir, device,
                                       exp_name=args.exp_name, info=args_str, extra_args=vars(args),
                                       render_every=args.render_every, save_every=args.save_every,
                                       scene_state=scene_state)
-    print("scene_state", scene_state.graph.neural_pipelines.keys(),  scene_state1.graph.neural_pipelines.keys())
-    sys.exit()
+    print("_______scene_state: ", scene_state.graph.neural_pipelines.keys(),  scene_state1.graph.neural_pipelines.keys())
+
     if not os.environ.get('WISP_HEADLESS') == '1':
         from wisp.renderer.app.optimization_app import OptimizationApp
         scene_state.renderer.device = trainer.device  # Use same device for trainer and renderer
