@@ -27,7 +27,7 @@ class BaseNeuralField(nn.Module):
 
     def __init__(self, 
         grid_type          : str = 'OctreeGrid',
-        interpolation_type : str = 'trilinear',
+        interpolation_type : str = 'linear', #= 'trilinear',
         multiscale_type    : str = 'none',
 
         as_type            : str = 'octree',

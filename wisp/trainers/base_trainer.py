@@ -79,7 +79,8 @@ class BaseTrainer(ABC):
             save_every (int): The number of epochs between model saves. -1 = no saving.
         """
         log.info(f'Info: \n{info}')
-        log.info(f'Training on {extra_args["dataset_path"]}')
+        if extra_args.get("dataset_path"):
+            log.info(f'Training on {extra_args["dataset_path"]}')
         
         self.extra_args = extra_args
         self.info = info
@@ -124,8 +125,10 @@ class BaseTrainer(ABC):
         # Max is a bit ambiguous since it could be the upper bound value or the num iterations. 
         # If it's the upper bound value it can be confusing based on the indexing system.
         self.scene_state.optimization.max_epochs = self.num_epochs
-
-        self.timer = PerfTimer(activate=extra_args["perf"])
+        on = False
+        if extra_args.get("perf"):
+             on = extra_args["perf"]
+        self.timer = PerfTimer(activate=on)
         self.timer.reset()
 
         self.scaler = torch.cuda.amp.GradScaler()
