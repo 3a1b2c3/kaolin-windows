@@ -7,6 +7,7 @@
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 import sys
 import argparse
+
 '''
 ___args <class 'argparse.Namespace'>
  py ./app/main_interactive_mixed.py --config configs/nglod_sdf_interactive.yaml --dataset-path D:\workspace\INTEGRATION\kaolin-wisp\data\test\obj\1.obj
@@ -27,7 +28,8 @@ argsSdf = {'trainer_type': 'SDFTrainer', 'exp_name': 'test-nglod-sdf', 'perf': F
 argsNef = {'trainer_type': 'MultiviewTrainer', 'exp_name': 'test-ngp-nerf-interactive', 'perf': False, 'detect_anomaly': False, 'config': 'configs/ngp_nerf_interactive.yaml', 'grid_type': 'HashGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'ray', 'multiscale_type': 'cat', 'feature_dim': 2, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 16, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'geometric', 'codebook_bitwidth': 19, 'embedder_type': 'positional', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralRadianceField', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 4, 'skip': None, 'pretrained': None, 'position_input': False, 'dataset_type': 'multiview', 'dataset_path': 'd:\\workspace\\INTEGRATION\\kaolin-wisp\\data\\test\\results_test_nored_200', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 
 'get_normals': False, 'num_samples': 100000, 'num_samples_on_mesh': 1000000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 256, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'black', 'mip': 2, 'optimizer_type': 'rmsprop', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 100.0, 'rgb_loss': 1.0, 'epochs': 50, 'batch_size': 1, 'resample': False, 'only_last': False, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': -1, 'render_every': -1, 'log_2d': False, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': -1, 'render_res': [1024, 1024], 'render_batch': 4000, 'camera_origin': [-3.0, 0.65, -3.0], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedRFTracer', 'num_steps': 512, 'step_size': 1.0, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': False, 'shading_mode': 'rb', 'log_level': 20}
 argsSdfInter = {'trainer_type': 'SDFTrainer', 'exp_name': 'test-nglod-sdf-interactive', 'perf': False, 'detect_anomaly': False, 
-'config': 'configs/nglod_sdf_interactive.yaml', 'grid_type': 'OctreeGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'voxel', 'multiscale_type': 'sum', 'feature_dim': 16, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 6, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'quad', 'codebook_bitwidth': 8, 'embedder_type': 'none', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralSDF', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 1, 'skip': None, 'pretrained': None, 'position_input': True, 'dataset_type': 'sdf', 'dataset_path': 'D:\\workspace\\INTEGRATION\\kaolin-wisp\\data\\test\\obj\\1.obj', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 'get_normals': False, 'num_samples': 500000, 'num_samples_on_mesh': 10000000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 32, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'white', 'mip': None, 'optimizer_type': 'adam', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 1.0, 'rgb_loss': 1.0, 'epochs': 10, 'batch_size': 512, 'resample': True, 'only_last': True, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': -1, 'render_every': -1, 'log_2d': True, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': -1, 'render_res': [1024, 1024], 'render_batch': 0, 'camera_origin': [-2.8, 2.3, -2.8], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedSDFTracer', 'num_steps': 128, 'step_size': 0.8, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': True, 'shading_mode': 'matcap', 'log_level': 20}
+'config': 'configs/nglod_sdf_interactive.yaml', 'grid_type': 'OctreeGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'voxel', 'multiscale_type': 'sum', 'feature_dim': 16, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 6, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'quad', 'codebook_bitwidth': 8, 'embedder_type': 'none', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralSDF', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 1, 'skip': None, 'pretrained': None, 'position_input': True, 'dataset_type': 'sdf', 'dataset_path': 'D:\\workspace\\INTEGRATION\\kaolin-wisp\\data\\test\\obj\\1.obj', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 'get_normals': False, 'num_samples': 500000, 'num_samples_on_mesh': 10000000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 32, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'white', 'mip': None, 'optimizer_type': 'adam', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 1.0, 'rgb_loss': 1.0, 'epochs': 10, 'batch_size': 512, 'resample': True, 'only_last': True, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': -1, 'render_every': -1, 
+'log_2d': True, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': -1, 'render_res': [1024, 1024], 'render_batch': 0, 'camera_origin': [-2.8, 2.3, -2.8], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedSDFTracer', 'num_steps': 128, 'step_size': 0.8, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': True, 'shading_mode': 'matcap', 'log_level': 20}
 
 class Object(object):
     dataset_type = None
@@ -42,15 +44,15 @@ class Object(object):
     valid_only = False
     interpolation_type = 'linear'
     samples_per_voxel = 32
+    log_dir = '_results/logs/runs/'
     dataset_path = r"D:\workspace\INTEGRATION\kaolin-wisp\data\test\obj\1.obj"
-    extra_args = { "perf" : None, 
+    extra_args = { "perf" : False,
      "dataset_path" : r"D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj" }
     epochs  = None
     batch_size = None
     lr = 0.001
     grid_lr_weight = 1.0
     weight_decay = None
-    log_dir = None
     exp_name = 'test-nglod-sdf-interactive'
     save_every = -1
     render_every = -1
