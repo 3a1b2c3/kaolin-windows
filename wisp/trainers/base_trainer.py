@@ -124,6 +124,8 @@ class BaseTrainer(ABC):
         # TODO(ttakikawa): Rename to num_epochs? 
         # Max is a bit ambiguous since it could be the upper bound value or the num iterations. 
         # If it's the upper bound value it can be confusing based on the indexing system.
+        if not self.num_epochs:
+            raise("No epochs")
         self.scene_state.optimization.max_epochs = self.num_epochs
         on = False
         if extra_args.get("perf"):
