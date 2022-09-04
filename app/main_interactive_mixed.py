@@ -7,9 +7,19 @@
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 import sys
 import argparse
+import yaml
+
+
 
 
 '''
+
+with open("example.yaml", "r") as stream:
+    try:
+        print(yaml.safe_load(stream))
+    except yaml.YAMLError as exc:
+        print(exc)
+
 py ./app/main_interactive.py --config configs/ngp_nerf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/results_test_nored_200
 py ./app/main_interactive.py --config configs/nglod_sdf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj
 
