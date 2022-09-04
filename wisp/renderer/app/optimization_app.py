@@ -7,7 +7,9 @@
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 
 from __future__ import annotations
+import sys
 from typing import Callable, Dict, List
+
 from wisp.renderer.gui import WidgetImgui
 from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetOptimization
 from wisp.renderer.gizmos.gizmo import Gizmo
@@ -20,8 +22,10 @@ from wisp.datasets import MultiviewDataset, SDFDataset
 class OptimizationApp(WispApp):
     """ An app for running an optimization and visualizing it's progress interactively in real time. """
 
-    def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str,
-                dataset=None):
+    def __init__(self, wisp_state: WispState, 
+                trainer_step_func: Callable[[], None] | List[Callable[[], None]], 
+                experiment_name: str,
+                dataset=None): # debug_data only
 
         super().__init__(wisp_state, experiment_name, dataset=dataset)
 
@@ -30,7 +34,11 @@ class OptimizationApp(WispApp):
         # The background tasks are constantly invoked by glumpy within the on_idle() event.
         # The actual rendering will occur in-between these calls, invoked by the on_draw() event (which checks if
         # it's time to render the scene again).
-        self.register_background_task(trainer_step_func)
+        if isinstance(trainer_step_func, list):
+            for i in trainer_step_func:
+                self.register_background_task(i)
+        else:
+            self.register_background_task(trainer_step_func)
 
     def init_wisp_state(self, wisp_state: WispState) -> None:
         """ A hook for applications to initialize specific fields inside the wisp state object.
