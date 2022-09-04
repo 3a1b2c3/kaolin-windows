@@ -181,8 +181,11 @@ class DebugData(object):
     def add_all(self, wisp_state=None):
         self.add_mesh_points_lines()
         self.add_octree()
-        if self.dataset and self.dataset.data.get('rays'):
-            self.add_rays_points_lines(self.dataset)
+        try:
+            if self.dataset and self.dataset.data and self.dataset.data.get('rays'):
+                self.add_rays_points_lines(self.dataset)
+        except:
+            pass
         if wisp_state and wisp_state.graph.neural_pipelines.get(testNgpNerfInteractive):
             self.add_coords_points(wisp_state)
 

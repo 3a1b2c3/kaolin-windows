@@ -8,10 +8,14 @@
 import sys
 import argparse
 
+
 '''
-___args <class 'argparse.Namespace'>
- py ./app/main_interactive_mixed.py --config configs/nglod_sdf_interactive.yaml --dataset-path D:\workspace\INTEGRATION\kaolin-wisp\data\test\obj\1.obj
- py ./app/main_interactive_mixed.py --config configs/ngp_nerf_interactive.yaml --dataset-path d:\workspace\INTEGRATION\kaolin-wisp\data\test\results_test_nored_200
+py ./app/main_interactive.py --config configs/ngp_mesh_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj
+py ./app/main_interactive.py --config configs/ngp_nerf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/results_test_nored_20
+py ./app/main_interactive.py --config configs/nglod_sdf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj
+
+py ./app/main_interactive_mixed.py --config configs/nglod_sdf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj
+py ./app/main_interactive_mixed.py --config configs/ngp_nerf_interactive.yaml --dataset-path  D:/workspace/INTEGRATION/kaolin-wisp/data/test/results_test_nored_200
 Be aware that for now, the neural fields we optimize are assumed to exist in the normalized range of -1 to 1
  (supporting per instance model matrix is on our short-term roadmap)
 '''
@@ -37,15 +41,15 @@ class Object(object):
     tracer_type = None
     pretrained = False
     sample_mode = None
-    num_samples = 500000 
-    num_samples_on_mesh = 10000000
+    num_samples = 50000 
+    num_samples_on_mesh = 100000
     get_normals = False
     sample_tex = False 
     valid_only = False
     interpolation_type = 'linear'
     samples_per_voxel = 32
     log_dir = '_results/logs/runs/'
-    dataset_path = r"D:\workspace\INTEGRATION\kaolin-wisp\data\test\obj\1.obj"
+    dataset_path = r"D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj"
     extra_args = { "perf" : False,
      "dataset_path" : r"D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj" }
     epochs  = None
@@ -105,7 +109,6 @@ if __name__ == "__main__":
                                       scene_state=scene_state)
     print("scene_state", scene_state.graph.neural_pipelines.keys())
     #   for renderer_id, neural_pipeline in scene_graph.neural_pipelines.items():
-    scene_state1 = WispState()
     args = sdF_args 
     trainerSDf = globals()[args.trainer_type](pipeline1, train_dataset1, args.epochs, args.batch_size,
                                       optim_cls, args.lr, args.weight_decay,
@@ -113,7 +116,7 @@ if __name__ == "__main__":
                                       exp_name=args.exp_name, info=args_str, extra_args=vars(args),
                                       render_every=args.render_every, save_every=args.save_every,
                                       scene_state=scene_state)
-    print("_______scene_state: ", scene_state.graph.neural_pipelines.keys(),  scene_state1.graph.neural_pipelines.keys())
+    print("_______scene_state: ", scene_state.graph.neural_pipelines.keys())
 
     if not os.environ.get('WISP_HEADLESS') == '1':
         from wisp.renderer.app.optimization_app import OptimizationApp
