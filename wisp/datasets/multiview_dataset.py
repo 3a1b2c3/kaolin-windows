@@ -24,6 +24,9 @@ class MultiviewDataset(Dataset):
     TODO(ttakikawa): Currently this class only supports sampling per image, not sampling across the entire
                      dataset. This is due to practical reasons. Not sure if it matters...
     """
+    minV = []
+    maxV = []
+    center = []
 
     def __init__(self, 
         dataset_path             : str,

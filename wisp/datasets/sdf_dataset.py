@@ -17,6 +17,8 @@ import wisp.ops.spc as wisp_spc_ops
 class SDFDataset(Dataset):
     """Base class for single mesh datasets with points sampled only at a given octree sampling region.
     """
+    minV = 0
+    maxV = 0
 
     def __init__(self, 
         sample_mode       : list = ['rand', 'rand', 'near', 'near', 'trace'],
@@ -40,7 +42,7 @@ class SDFDataset(Dataset):
         self.sample_tex = sample_tex
         self.initialization_mode = None
     
-    def init_from_mesh(self, dataset_path, mode_norm='sphere'):
+    def init_from_mesh(self, dataset_path, mode_norm='aabb'):#'sphere', normalize=False):#DEBUG
         """Initializes the dataset by sampling SDFs from a mesh.
 
         Args:
@@ -54,7 +56,7 @@ class SDFDataset(Dataset):
             self.V, self.F, self.texv, self.texf, self.mats = out
         else:
             self.V, self.F = mesh_ops.load_obj(dataset_path)
-
+        
         self.V, self.F = mesh_ops.normalize(self.V, self.F, mode_norm)
 
         self.mesh = self.V[self.F]
