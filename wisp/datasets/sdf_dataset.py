@@ -20,15 +20,13 @@ import wisp.ops.spc as wisp_spc_ops
 class SDFDataset(Dataset):
     """Base class for single mesh datasets with points sampled only at a given octree sampling region.
     """
-    minV = 0
-    maxV = 0
 
     def __init__(self, 
         sample_mode       : list = ['rand', 'rand', 'near', 'near', 'trace'],
         num_samples       : int = 100000,
         get_normals       : bool = False,
         sample_tex        : bool = False,
-        transform         : Callable = None,
+        matrix            : torch.Tensor = None,
     ):
         """Construct dataset. This dataset also needs to be initialized.
 
@@ -45,7 +43,12 @@ class SDFDataset(Dataset):
         self.get_normals = get_normals
         self.sample_tex = sample_tex
         self.initialization_mode = None
-        self.transform = transform
+        self.matrix = matrix
+    
+    def transform(self, points: torch.Tensor, matrix : torch.Tensor):
+        if matrix:
+            return points.matmul(matrix)
+        return points
     
     def init_from_mesh(self, dataset_path, mode_norm='aabb'):#'sphere', normalize=False):#DEBUG
         """Initializes the dataset by sampling SDFs from a mesh.
@@ -63,7 +66,11 @@ class SDFDataset(Dataset):
             self.V, self.F = mesh_ops.load_obj(dataset_path)
         
         self.V, self.F = mesh_ops.normalize(self.V, self.F, mode_norm)
-
+        """
+                 self.coords = data["coords"]
+                self.coords_center = data["coords_center"]
+                self.coords_scale = data["coords_scale"]
+        """
         self.mesh = self.V[self.F]
         self.resample()
         
@@ -208,9 +215,7 @@ class SDFDataset(Dataset):
         elif self.sample_tex:
             return self.pts[idx], self.d[idx], self.rgb[idx]
         else:
-            out_pts = self.pts
-            if self.transform is not None:
-                out_pts = self.transform(out_pts)
+            out_pts = self.transform(self.pts, self.matrix)
             return out_pts[idx], self.d[idx]
 
     def __len__(self):

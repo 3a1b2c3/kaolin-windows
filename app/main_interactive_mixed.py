@@ -8,7 +8,7 @@
 import sys
 import argparse
 import yaml
-
+import torch
 
 
 
@@ -229,7 +229,14 @@ if __name__ == "__main__":
             print(yaml.safe_load(stream))
         except yaml.YAMLError as exc:
             print(exc)
-    
+    # torch.Tensor of 4x4 matrix defining how the object local coordinates should transform to world coordinates.
+    transform = [
+        1, 0, 0, 0, 
+        0, 1, 0, 0, 
+        0, 0, 1, 0, 
+        0, 0, 0, 1 
+    ]
+    sdF_args.transform = torch.FloatTensor(transform)
     pipeline1, train_dataset1, device = get_modules_from_config(sdF_args)
     #print(" pipeline", pipeline) #neural_pipelines.items():
 
