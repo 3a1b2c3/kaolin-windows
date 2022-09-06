@@ -28,7 +28,6 @@ class SDFDataset(Dataset):
         num_samples       : int = 100000,
         get_normals       : bool = False,
         sample_tex        : bool = False,
-        normalize         : bool = True,
         transform         : Callable = None,
     ):
         """Construct dataset. This dataset also needs to be initialized.
@@ -46,6 +45,7 @@ class SDFDataset(Dataset):
         self.get_normals = get_normals
         self.sample_tex = sample_tex
         self.initialization_mode = None
+        self.transform = transform
     
     def init_from_mesh(self, dataset_path, mode_norm='aabb'):#'sphere', normalize=False):#DEBUG
         """Initializes the dataset by sampling SDFs from a mesh.
@@ -195,15 +195,23 @@ class SDFDataset(Dataset):
         """Retrieve point sample."""
         if self.initialization_mode is None:
             raise Exception("The dataset is not initialized.")
+        
         # TODO(ttakikawa): Do this channel-wise instead
-        if self.get_normals and self.sample_tex:
+        out_normals = self.get_normals
+        if out_normals and self.sample_tex:
+            if self.transform is not None:
+                #https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/geometry/transforming-normals
+                pass
             return self.pts[idx], self.d[idx], self.nrm[idx], self.rgb[idx]
         elif self.get_normals:
             return self.pts[idx], self.d[idx], self.nrm[idx]
         elif self.sample_tex:
             return self.pts[idx], self.d[idx], self.rgb[idx]
         else:
-            return self.pts[idx], self.d[idx]
+            out_pts = self.pts
+            if self.transform is not None:
+                out_pts = self.transform(out_pts)
+            return out_pts[idx], self.d[idx]
 
     def __len__(self):
         """Return length of dataset (number of _samples_)."""
@@ -211,3 +219,4 @@ class SDFDataset(Dataset):
             raise Exception("The dataset is not initialized.")
 
         return self.pts.size()[0]
+
