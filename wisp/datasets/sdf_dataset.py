@@ -6,9 +6,12 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 
+from typing import Callable
+import logging as log
+
 import torch
 from torch.utils.data import Dataset
-import logging as log
+
 import kaolin.ops.spc as spc_ops
 import wisp.ops.mesh as mesh_ops
 import wisp.ops.spc as wisp_spc_ops
@@ -25,6 +28,8 @@ class SDFDataset(Dataset):
         num_samples       : int = 100000,
         get_normals       : bool = False,
         sample_tex        : bool = False,
+        normalize         : bool = True,
+        transform         : Callable = None,
     ):
         """Construct dataset. This dataset also needs to be initialized.
 
