@@ -18,7 +18,8 @@ class OctreeAS(object):
     """Octree bottom-level acceleration structure class implemented using Kaolin SPC.
        Can be used to to quickly query cells occupancy, and trace rays against the volume.
     """
-    
+    matrix = None 
+
     def __init__(self):
         self.initialized = False
 
