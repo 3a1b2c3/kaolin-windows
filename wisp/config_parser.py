@@ -430,8 +430,14 @@ def get_modules_from_config(args):
                     pipeline.to(device)
 
     elif args.dataset_type == "sdf":
+        matrix = None
+        try:
+            matrix = args.matrix
+        except:
+            pass
         train_dataset = SDFDataset(args.sample_mode, args.num_samples,
-                                   args.get_normals, args.sample_tex)
+                                   args.get_normals, args.sample_tex,
+                                   matrix)
         
         if pipeline.nef.grid is not None:
             if isinstance(pipeline.nef.grid, OctreeGrid):

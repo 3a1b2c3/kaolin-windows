@@ -18,7 +18,8 @@ class OctreeAS(object):
     """Octree bottom-level acceleration structure class implemented using Kaolin SPC.
        Can be used to to quickly query cells occupancy, and trace rays against the volume.
     """
-    
+    matrix = None 
+
     def __init__(self):
         self.initialized = False
 
@@ -45,7 +46,7 @@ class OctreeAS(object):
 
         # For now only supports sphere normalization, which is a bit more robust for SDF type workloads
         # (although it will underutilize the voxels)
-        self.V, self.F = mesh_ops.normalize(self.V, self.F, 'sphere')
+        self.V, self.F, minv, maxV, cent, scale = mesh_ops.normalize(self.V, self.F, 'sphere')
 
         # Note: This function is not deterministic since it relies on sampling.
         #       Eventually this will be replaced by 3D rasterization

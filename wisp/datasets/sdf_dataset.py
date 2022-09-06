@@ -6,9 +6,12 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 
+from typing import Callable
+import logging as log
+
 import torch
 from torch.utils.data import Dataset
-import logging as log
+
 import kaolin.ops.spc as spc_ops
 import wisp.ops.mesh as mesh_ops
 import wisp.ops.spc as wisp_spc_ops
@@ -23,6 +26,7 @@ class SDFDataset(Dataset):
         num_samples       : int = 100000,
         get_normals       : bool = False,
         sample_tex        : bool = False,
+        matrix            : torch.Tensor = None,
     ):
         """Construct dataset. This dataset also needs to be initialized.
 
@@ -39,8 +43,14 @@ class SDFDataset(Dataset):
         self.get_normals = get_normals
         self.sample_tex = sample_tex
         self.initialization_mode = None
+        self.matrix = matrix
     
-    def init_from_mesh(self, dataset_path, mode_norm='sphere'):
+    def transform(self, points: torch.Tensor, matrix : torch.Tensor):
+        if matrix:
+            return points.matmul(matrix)
+        return points
+    
+    def init_from_mesh(self, dataset_path, mode_norm='aabb'):#'sphere', normalize=False):#DEBUG
         """Initializes the dataset by sampling SDFs from a mesh.
 
         Args:
@@ -54,9 +64,13 @@ class SDFDataset(Dataset):
             self.V, self.F, self.texv, self.texf, self.mats = out
         else:
             self.V, self.F = mesh_ops.load_obj(dataset_path)
-
+        
         self.V, self.F = mesh_ops.normalize(self.V, self.F, mode_norm)
-
+        """
+                 self.coords = data["coords"]
+                self.coords_center = data["coords_center"]
+                self.coords_scale = data["coords_scale"]
+        """
         self.mesh = self.V[self.F]
         self.resample()
         
@@ -188,15 +202,21 @@ class SDFDataset(Dataset):
         """Retrieve point sample."""
         if self.initialization_mode is None:
             raise Exception("The dataset is not initialized.")
+        
         # TODO(ttakikawa): Do this channel-wise instead
-        if self.get_normals and self.sample_tex:
+        out_normals = self.get_normals
+        if out_normals and self.sample_tex:
+            if self.transform is not None:
+                #https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/geometry/transforming-normals
+                pass
             return self.pts[idx], self.d[idx], self.nrm[idx], self.rgb[idx]
         elif self.get_normals:
             return self.pts[idx], self.d[idx], self.nrm[idx]
         elif self.sample_tex:
             return self.pts[idx], self.d[idx], self.rgb[idx]
         else:
-            return self.pts[idx], self.d[idx]
+            out_pts = self.transform(self.pts, self.matrix)
+            return out_pts[idx], self.d[idx]
 
     def __len__(self):
         """Return length of dataset (number of _samples_)."""
@@ -204,3 +224,4 @@ class SDFDataset(Dataset):
             raise Exception("The dataset is not initialized.")
 
         return self.pts.size()[0]
+

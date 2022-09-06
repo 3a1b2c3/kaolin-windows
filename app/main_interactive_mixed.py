@@ -8,17 +8,40 @@
 import sys
 import argparse
 import yaml
-
+import torch
 
 
 
 '''
+    # SDF Dataset
+    data_group.add_argument('--sample-mode', type=str, nargs='*', 
+                            default=['rand', 'near', 'near', 'trace', 'trace'],
+                            help='The sampling scheme to be used.')
+    data_group.add_argument('--get-normals', action='store_true',
+                            help='Sample the normals.')
+    data_group.add_argument('--num-samples', type=int, default=100000,
+                            help='Number of samples per mode (or per epoch for SPC)')
+    data_group.add_argument('--num-samples-on-mesh', type=int, default=1000000,
+                            help='Number of samples generated on mesh surface to initialize occupancy structures')
+    data_group.add_argument('--sample-tex', action='store_true',
+                            help='Sample textures')
+    data_group.add_argument('--mode-mesh-norm', type=str, default='sphere',
+                            choices=['sphere', 'aabb', 'planar', 'none'],
+                            help='Normalize the mesh')
+    data_group.add_argument('--samples-per-voxel', type=int, default=256,
+                            help='Number of samples per voxel (for SDF initialization from grid)')
 
-with open("example.yaml", "r") as stream:
-    try:
-        print(yaml.safe_load(stream))
-    except yaml.YAMLError as exc:
-        print(exc)
+    # Multiview Dataset
+    data_group.add_argument('--multiview-dataset-format', default='standard',
+                            choices=['standard', 'rtmv'],
+                            help='Data format for the transforms')
+    data_group.add_argument('--num-rays-sampled-per-img', type=int, default='4096',
+                            help='Number of rays to sample per image')
+    data_group.add_argument('--bg-color', default='white',
+                            choices=['white', 'black'],
+                            help='Background color')
+    data_group.add_argument('--mip', type=int, default=None, 
+                            help='MIP level of ground truth image')
 
 py ./app/main_interactive.py --config configs/ngp_nerf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/results_test_nored_200
 py ./app/main_interactive.py --config configs/nglod_sdf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj
@@ -178,6 +201,7 @@ sdF_arg_dict = {'trainer_type': 'SDFTrainer', 'exp_name': 'test-nglod-sdf-intera
 'config': 'configs/nglod_sdf_interactive.yaml', 'grid_type': 'OctreeGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'voxel', 'multiscale_type': 'sum', 'feature_dim': 16, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 6, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'quad', 'codebook_bitwidth': 8, 'embedder_type': 'none', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralSDF', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 1, 'skip': None, 'pretrained': None, 'position_input': True, 'dataset_type': 'sdf', 'dataset_path': 'D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 'get_normals': False, 'num_samples': 5000, 'num_samples_on_mesh': 10000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 32, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'white', 'mip': None, 'optimizer_type': 'adam', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 1.0, 'rgb_loss': 1.0, 'epochs': 10, 'batch_size': 512, 'resample': True, 'only_last': True, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': -1, 'render_every': -1, 'log_2d': True, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': -1, 'render_res': [1024, 1024], 'render_batch': 0, 'camera_origin': [-2.8, 2.3, -2.8], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedSDFTracer', 'num_steps': 128, 'step_size': 0.8, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': True, 'shading_mode': 'matcap', 'log_level': 20}
 
 if __name__ == "__main__":
+
     from cuda_guard import setup_cuda_context
     setup_cuda_context()     # Must be called before any torch operations take place
 
@@ -199,8 +223,20 @@ if __name__ == "__main__":
     #___args ArgumentParser(prog='main_interactive_mixed.py', usage=None, description='ArgumentParser for kaolin-wisp.',
     #  formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
     # Create the parser
-
-
+    
+    with open("D:/workspace/INTEGRATION/kaolin-wisp/configs/nglod_sdf_interactive.yaml", "r") as stream:
+        try:
+            print(yaml.safe_load(stream))
+        except yaml.YAMLError as exc:
+            print(exc)
+    # torch.Tensor of 4x4 matrix defining how the object local coordinates should transform to world coordinates.
+    transform = [
+        1, 0, 0, 0, 
+        0, 1, 0, 0, 
+        0, 0, 1, 0, 
+        0, 0, 0, 1 
+    ]
+    sdF_args.transform = torch.FloatTensor(transform)
     pipeline1, train_dataset1, device = get_modules_from_config(sdF_args)
     #print(" pipeline", pipeline) #neural_pipelines.items():
 
