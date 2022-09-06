@@ -45,7 +45,8 @@ class OctreeAS(object):
 
         # For now only supports sphere normalization, which is a bit more robust for SDF type workloads
         # (although it will underutilize the voxels)
-        self.V, self.F = mesh_ops.normalize(self.V, self.F, 'sphere')
+        if False:
+            self.V, self.F, minv, maxV, cent, scale = mesh_ops.normalize(self.V, self.F, 'sphere')
 
         # Note: This function is not deterministic since it relies on sampling.
         #       Eventually this will be replaced by 3D rasterization
