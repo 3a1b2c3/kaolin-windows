@@ -502,7 +502,6 @@ class WispApp(ABC):
         if hook is not None:
             def _run_hook(dt: float):
                 if not self.wisp_state.renderer.background_tasks_paused:
-                    print(isinstance(hook, list), "hook:", hook)
                     if isinstance(hook, list):
                         for i in hook:
                             i()
