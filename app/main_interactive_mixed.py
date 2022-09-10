@@ -13,35 +13,12 @@ import torch
 
 
 '''
-    # SDF Dataset
-    data_group.add_argument('--sample-mode', type=str, nargs='*', 
-                            default=['rand', 'near', 'near', 'trace', 'trace'],
-                            help='The sampling scheme to be used.')
-    data_group.add_argument('--get-normals', action='store_true',
-                            help='Sample the normals.')
-    data_group.add_argument('--num-samples', type=int, default=100000,
-                            help='Number of samples per mode (or per epoch for SPC)')
-    data_group.add_argument('--num-samples-on-mesh', type=int, default=1000000,
-                            help='Number of samples generated on mesh surface to initialize occupancy structures')
-    data_group.add_argument('--sample-tex', action='store_true',
-                            help='Sample textures')
-    data_group.add_argument('--mode-mesh-norm', type=str, default='sphere',
-                            choices=['sphere', 'aabb', 'planar', 'none'],
-                            help='Normalize the mesh')
-    data_group.add_argument('--samples-per-voxel', type=int, default=256,
-                            help='Number of samples per voxel (for SDF initialization from grid)')
 
-    # Multiview Dataset
-    data_group.add_argument('--multiview-dataset-format', default='standard',
-                            choices=['standard', 'rtmv'],
-                            help='Data format for the transforms')
-    data_group.add_argument('--num-rays-sampled-per-img', type=int, default='4096',
-                            help='Number of rays to sample per image')
-    data_group.add_argument('--bg-color', default='white',
-                            choices=['white', 'black'],
-                            help='Background color')
-    data_group.add_argument('--mip', type=int, default=None, 
-                            help='MIP level of ground truth image')
+with open("example.yaml", "r") as stream:
+    try:
+        print(yaml.safe_load(stream))
+    except yaml.YAMLError as exc:
+        print(exc)
 
 py ./app/main_interactive.py --config configs/ngp_nerf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/results_test_nored_200
 py ./app/main_interactive.py --config configs/nglod_sdf_interactive.yaml --dataset-path D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj
@@ -201,7 +178,6 @@ sdF_arg_dict = {'trainer_type': 'SDFTrainer', 'exp_name': 'test-nglod-sdf-intera
 'config': 'configs/nglod_sdf_interactive.yaml', 'grid_type': 'OctreeGrid', 'interpolation_type': 'linear', 'as_type': 'none', 'raymarch_type': 'voxel', 'multiscale_type': 'sum', 'feature_dim': 16, 'feature_std': 0.01, 'feature_bias': 0.0, 'noise_std': 0.0, 'num_lods': 6, 'base_lod': 2, 'max_grid_res': 2048, 'tree_type': 'quad', 'codebook_bitwidth': 8, 'embedder_type': 'none', 'pos_multires': 10, 'view_multires': 4, 'nef_type': 'NeuralSDF', 'layer_type': 'none', 'activation_type': 'relu', 'decoder_type': 'basic', 'num_layers': 1, 'hidden_dim': 128, 'out_dim': 1, 'skip': None, 'pretrained': None, 'position_input': True, 'dataset_type': 'sdf', 'dataset_path': 'D:/workspace/INTEGRATION/kaolin-wisp/data/test/obj/1.obj', 'dataset_num_workers': -1, 'sample_mode': ['rand', 'near', 'near', 'trace', 'trace'], 'get_normals': False, 'num_samples': 5000, 'num_samples_on_mesh': 10000, 'sample_tex': False, 'mode_mesh_norm': 'sphere', 'samples_per_voxel': 32, 'multiview_dataset_format': 'standard', 'num_rays_sampled_per_img': 4096, 'bg_color': 'white', 'mip': None, 'optimizer_type': 'adam', 'lr': 0.001, 'weight_decay': 0, 'grid_lr_weight': 1.0, 'rgb_loss': 1.0, 'epochs': 10, 'batch_size': 512, 'resample': True, 'only_last': True, 'resample_every': 1, 'model_format': 'full', 'save_as_new': False, 'save_every': -1, 'render_every': -1, 'log_2d': True, 'log_dir': '_results/logs/runs/', 'grow_every': -1, 'prune_every': -1, 'random_lod': False, 'growth_strategy': 'increase', 'valid_only': False, 'valid_every': -1, 'render_res': [1024, 1024], 'render_batch': 0, 'camera_origin': [-2.8, 2.3, -2.8], 'camera_lookat': [0, 0, 0], 'camera_fov': 30, 'camera_proj': 'persp', 'camera_clamp': [0, 10], 'tracer_type': 'PackedSDFTracer', 'num_steps': 128, 'step_size': 0.8, 'min_dis': 0.0003, 'matcap_path': 'data/matcaps/matcap_plastic_yellow.jpg', 'ao': False, 'shadow': True, 'shading_mode': 'matcap', 'log_level': 20}
 
 if __name__ == "__main__":
-
     from cuda_guard import setup_cuda_context
     setup_cuda_context()     # Must be called before any torch operations take place
 
@@ -223,29 +199,54 @@ if __name__ == "__main__":
     #___args ArgumentParser(prog='main_interactive_mixed.py', usage=None, description='ArgumentParser for kaolin-wisp.',
     #  formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
     # Create the parser
-    
-    with open("D:/workspace/INTEGRATION/kaolin-wisp/configs/nglod_sdf_interactive.yaml", "r") as stream:
-        try:
-            print(yaml.safe_load(stream))
-        except yaml.YAMLError as exc:
-            print(exc)
-    # torch.Tensor of 4x4 matrix defining how the object local coordinates should transform to world coordinates.
-    transform = [
-        1, 0, 0, 0, 
-        0, 1, 0, 0, 
-        0, 0, 1, 0, 
-        0, 0, 0, 1 
-    ]
-    sdF_args.transform = torch.FloatTensor(transform)
+
+    '''  
+            matrix: A tensor of shape (4, 4) or of shape (minibatch, 4, 4)
+                representing the 4x4 3D transformation matrix.
+                If `None`, initializes with identity using
+                the specified `device` and `dtype`
+                        M = [
+                [Rxx, Ryx, Rzx, 0],
+                [Rxy, Ryy, Rzy, 0],
+                [Rxz, Ryz, Rzz, 0],
+                [Tx,  Ty,  Tz,  1],
+            ]
+    ''' 
+    M_data = [  [.3, 0., 0., 0], 
+                [0., .3, 0., 0], 
+                [0., 0., .3, 0], 
+                [0., 0., 0., 1]
+        ]
+    sdF_args.matrix = torch.Tensor( M_data)
     pipeline1, train_dataset1, device = get_modules_from_config(sdF_args)
     #print(" pipeline", pipeline) #neural_pipelines.items():
-
+    
     pipeline, train_dataset, device = get_modules_from_config(args)
 
 
     optim_cls, optim_params = get_optimizer_from_config(args)
     scene_state = WispState()
     #    def __init__(self, pipeline, dataset, num_epochs, batch_size,
+
+    #   for renderer_id, neural_pipeline in scene_graph.neural_pipelines.items():
+    trainerSDf = globals()[sdF_args.trainer_type](pipeline1, train_dataset1, 
+                                     sdF_args.epochs, 
+                                     sdF_args.batch_size,
+                                      optim_cls, 
+                                      sdF_args.lr, 
+                                      sdF_args.weight_decay,
+                                      sdF_args.grid_lr_weight, 
+                                      optim_params, 
+                                      sdF_args.log_dir, 
+                                      device,
+                                      exp_name=sdF_args.exp_name, 
+                                      info=args_str, 
+                                      extra_args=sdF_arg_dict,
+                                      render_every=sdF_args.render_every, 
+                                      save_every=sdF_args.save_every,
+                                      scene_state=scene_state)
+    print("_______scene_state1: ", scene_state.graph.neural_pipelines.keys(), args_str)
+
     trainer = globals()[args.trainer_type](pipeline, train_dataset, args.epochs, args.batch_size,
                                       optim_cls, args.lr, args.weight_decay,
                                       args.grid_lr_weight, optim_params, args.log_dir, device,
@@ -253,24 +254,14 @@ if __name__ == "__main__":
                                       extra_args=vars(args),
                                       render_every=args.render_every, save_every=args.save_every,
                                       scene_state=scene_state)
-    print("scene_state", scene_state.graph.neural_pipelines.keys())
-    #   for renderer_id, neural_pipeline in scene_graph.neural_pipelines.items():
-    args = sdF_args 
-    trainerSDf = globals()[args.trainer_type](pipeline1, train_dataset1, args.epochs, args.batch_size,
-                                      optim_cls, args.lr, args.weight_decay,
-                                      args.grid_lr_weight, optim_params, args.log_dir, device,
-                                      exp_name=args.exp_name, info=args_str, 
-                                      extra_args=sdF_arg_dict,
-                                      render_every=args.render_every, save_every=args.save_every,
-                                      scene_state=scene_state)
-    print("_______scene_state: ", scene_state.graph.neural_pipelines.keys())
+    print("_______scene_state2: ", scene_state.graph.neural_pipelines.keys())
 
     if not os.environ.get('WISP_HEADLESS') == '1':
         from wisp.renderer.app.optimization_app import OptimizationApp
         scene_state.renderer.device = trainer.device  # Use same device for trainer and renderer
         #    def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str, dataset=None):
         renderer = OptimizationApp(wisp_state=scene_state,
-                                        trainer_step_func=[trainer.iterate, trainerSDf.iterate],
+                                        trainer_step_func=[ trainer.iterate, trainerSDf.iterate],
                                         experiment_name="wisp trainer",
                                         dataset=train_dataset1 # debug_data only
                                         )

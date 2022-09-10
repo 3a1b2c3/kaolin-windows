@@ -34,11 +34,8 @@ class OptimizationApp(WispApp):
         # The background tasks are constantly invoked by glumpy within the on_idle() event.
         # The actual rendering will occur in-between these calls, invoked by the on_draw() event (which checks if
         # it's time to render the scene again).
-        if isinstance(trainer_step_func, list):
-            for i in trainer_step_func:
-                self.register_background_task(i)
-        else:
-            self.register_background_task(trainer_step_func)
+        print(isinstance(trainer_step_func, list), " trainer_step_func:", trainer_step_func)
+        self.register_background_task(trainer_step_func)
 
     def init_wisp_state(self, wisp_state: WispState) -> None:
         """ A hook for applications to initialize specific fields inside the wisp state object.

@@ -161,7 +161,7 @@ class NeuralRadianceField(BaseNeuralField):
         self.coords = coords
         #print(self.effective_feature_dim) 32
         #torch.Size([107, 32])  __self.features:  torch.Size([107, 1, 3])
-        print(self.features.shape, " __self.features: " , self.coords.shape)
+        #print(self.features.shape, " __self.features: " , self.coords.shape)
         timer.check("rf_rgba_interpolate")
 
         # Optionally concat the positions to the embedding, and also concatenate embedded view directions.

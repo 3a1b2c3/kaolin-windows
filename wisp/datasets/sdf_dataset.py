@@ -15,6 +15,7 @@ from torch.utils.data import Dataset
 import kaolin.ops.spc as spc_ops
 import wisp.ops.mesh as mesh_ops
 import wisp.ops.spc as wisp_spc_ops
+from wisp.datasets.transforms import Transform3d
 
 
 class SDFDataset(Dataset):
@@ -26,7 +27,7 @@ class SDFDataset(Dataset):
         num_samples       : int = 100000,
         get_normals       : bool = False,
         sample_tex        : bool = False,
-        matrix            : torch.Tensor = None,
+        matrix            : torch.Tensor = None #  (supporting per instance model matrix is on our short-term roadmap)
     ):
         """Construct dataset. This dataset also needs to be initialized.
 
@@ -44,12 +45,86 @@ class SDFDataset(Dataset):
         self.sample_tex = sample_tex
         self.initialization_mode = None
         self.matrix = matrix
+    '''  
+            matrix: A tensor of shape (4, 4) or of shape (minibatch, 4, 4)
+                representing the 4x4 3D transformation matrix.
+                If `None`, initializes with identity using
+s                the specified `device` and `dtype`
+                        M = [
+                [Rxx, Ryx, Rzx, 0],
+                [Rxy, Ryy, Rzy, 0],
+                [Rxz, Ryz, Rzz, 0],
+                [Tx,  Ty,  Tz,  1],
+            ]
+    ''' 
+    def transform(self, points: torch.Tensor, matrix : torch.Tensor, normals: torch.Tensor =None):
+        t = Transform3d(matrix=matrix)#.translate(torch.zeros(3,3))
+        normals_transformed = normals
+        if t:
+            points_transformed = t.transform_points(points)    # => (N, P, 3)
+            #print(points_transformed.shape, points.shape)
+            if normals is not None:
+                normals_transformed = t.transform_normals(normals)  # => (N, P, 3)
+            return points_transformed, normals_transformed
+        return points, normals
+    '''
+     Suppose that t is a Transform3d;
+    then we can do the following:
+
+    .. code-block:: python
+
+        N = len(t)
+        points = torch.randn(N, P, 3)
+        normals = torch.randn(N, P, 3)
+        points_transformed = t.transform_points(points)    # => (N, P, 3)
+        normals_transformed = t.transform_normals(normals)  # => (N, P, 3)
+
+    https://pytorch3d.readthedocs.io/en/latest/modules/transforms.html
+    pytorch3d.transforms.Transform3d(dtype: torch.dtype = torch.float32, device: Union[str, torch.device] = 'cpu', matrix: Optional[torch.Tensor] = None
+
+        M = [
+                [Rxx, Ryx, Rzx, 0],
+                [Rxy, Ryy, Rzy, 0],
+                [Rxz, Ryz, Rzz, 0],
+                [Tx,  Ty,  Tz,  1],
+            ]
+
+from pytorch3d.transforms import Transform3D
+transform3 = Transform3d().rotate(torch.stack([torch.eye(3)]*3)).translate(torch.zeros(3,3))
+transform1 = Transform3d()
+transform4 = transform1.stack(transform3)
+print(len(transform3))
+print(len(transform1))
+print(len(transform4))
+transform4.transform_points(torch.zeros(4,5,3))
+
+N = len(t)
+points = torch.randn(N, P, 3)
+normals = torch.randn(N, P, 3)
+points_transformed = t.transform_points(points)    # => (N, P, 3)
+normals_transformed = t.transform_normals(normals)  # => (N, P, 3)
+
+    \# example: rotate around y axis 90 degrees
+relative_rotation = pytorch3d.transforms.euler_angles_to_matrix(
+    torch.tensor([0, np.pi/2, 0]), "XYZ"
+)
+            view_matrix[:3, -1] = torch.matmul(-view_matrix[:3, :3], poses[i][:3, -1])
+    c = a@b #For dot product
+         view_matrix = view_matrix @ retranslate @ rot_yaw @ translate
+    def transform(self, matrix):
+    """ Apply a transformation defined by a given matrix. """
+    self.nodes = np.dot(self.nodes, matrix)
+This uses the numpy function dot(), which multiplies two matrices. We now write a function in wireframe.py to create a translation matrix:
+
+def translationMatrix(dx=0, dy=0, dz=0):
+    """ Return matrix for translation along vector (dx, dy, dz). """
     
-    def transform(self, points: torch.Tensor, matrix : torch.Tensor):
-        if matrix:
-            return points.matmul(matrix)
-        return points
-    
+    return np.array([[1,0,0,0],
+                     [0,1,0,0],
+                     [0,0,1,0],
+                     [dx,dy,dz,1]])
+    '''
+
     def init_from_mesh(self, dataset_path, mode_norm='aabb'):#'sphere', normalize=False):#DEBUG
         """Initializes the dataset by sampling SDFs from a mesh.
 
@@ -198,6 +273,7 @@ class SDFDataset(Dataset):
             self.d = self.d.cpu()
             self.pts = self.pts.cpu()
 
+    # pts1[0] 
     def __getitem__(self, idx: int):
         """Retrieve point sample."""
         if self.initialization_mode is None:
@@ -205,18 +281,19 @@ class SDFDataset(Dataset):
         
         # TODO(ttakikawa): Do this channel-wise instead
         out_normals = self.get_normals
+        #out_normal = self.transform(out_normals, self.matrix)
         if out_normals and self.sample_tex:
-            if self.transform is not None:
-                #https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/geometry/transforming-normals
-                pass
             return self.pts[idx], self.d[idx], self.nrm[idx], self.rgb[idx]
         elif self.get_normals:
             return self.pts[idx], self.d[idx], self.nrm[idx]
         elif self.sample_tex:
             return self.pts[idx], self.d[idx], self.rgb[idx]
         else:
-            out_pts = self.transform(self.pts, self.matrix)
-            return out_pts[idx], self.d[idx]
+            if self.matrix.shape:
+                out_pts, _n = self.transform(self.pts, self.matrix)
+                #print(idx, type(out_pts), " __getitem_", self.pts.shape)
+                return out_pts[idx], self.d[idx]
+            return self.pts[idx], self.d[idx]
 
     def __len__(self):
         """Return length of dataset (number of _samples_)."""
@@ -224,4 +301,3 @@ class SDFDataset(Dataset):
             raise Exception("The dataset is not initialized.")
 
         return self.pts.size()[0]
-
