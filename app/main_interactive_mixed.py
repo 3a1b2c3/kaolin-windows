@@ -215,7 +215,7 @@ if __name__ == "__main__":
     M_data = [  [.3, 0., 0., 0], 
                 [0., .3, 0., 0], 
                 [0., 0., .3, 0], 
-                [1., 0., 0., 1]
+                [0., 0., 0., 1]
         ]
     sdF_args.matrix = torch.Tensor( M_data)
     pipeline1, train_dataset1, device = get_modules_from_config(sdF_args)
@@ -261,7 +261,7 @@ if __name__ == "__main__":
         scene_state.renderer.device = trainer.device  # Use same device for trainer and renderer
         #    def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str, dataset=None):
         renderer = OptimizationApp(wisp_state=scene_state,
-                                        trainer_step_func=[trainer.iterate, trainerSDf.iterate],
+                                        trainer_step_func=[ trainer.iterate, trainerSDf.iterate],
                                         experiment_name="wisp trainer",
                                         dataset=train_dataset1 # debug_data only
                                         )
