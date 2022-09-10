@@ -9,4 +9,4 @@
 from .sdf_dataset import SDFDataset
 from .multiview_dataset import MultiviewDataset
 from .utils import default_collate
-from .transforms import ray_sampler, Transform3d
+from .transforms import ray_sampler, transform3d

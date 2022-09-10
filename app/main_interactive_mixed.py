@@ -215,7 +215,7 @@ if __name__ == "__main__":
     M_data = [  [.3, 0., 0., 0], 
                 [0., .3, 0., 0], 
                 [0., 0., .3, 0], 
-                [0., 0., 0., 1]
+                [1., 0., 0., 1]
         ]
     sdF_args.matrix = torch.Tensor( M_data)
     pipeline1, train_dataset1, device = get_modules_from_config(sdF_args)
@@ -236,13 +236,17 @@ if __name__ == "__main__":
                                       scene_state=scene_state)
     print("scene_state", scene_state.graph.neural_pipelines.keys())
     #   for renderer_id, neural_pipeline in scene_graph.neural_pipelines.items():
-    args = sdF_args 
-    trainerSDf = globals()[args.trainer_type](pipeline1, train_dataset1, args.epochs, args.batch_size,
-                                      optim_cls, args.lr, args.weight_decay,
-                                      args.grid_lr_weight, optim_params, args.log_dir, device,
-                                      exp_name=args.exp_name, info=args_str, 
+    trainerSDf = globals()[ sdF_args.trainer_type](pipeline1, train_dataset1, sdF_args.epochs, sdF_args.batch_size,
+                                      optim_cls, args.lr, 
+                                      sdF_args.weight_decay,
+                                      sdF_args.grid_lr_weight, 
+                                      optim_params, 
+                                      sdF_args.log_dir, device,
+                                      exp_name=args.exp_name, 
+                                      info=args_str, 
                                       extra_args=sdF_arg_dict,
-                                      render_every=args.render_every, save_every=args.save_every,
+                                      render_every=sdF_args.render_every, 
+                                      save_every=sdF_args.save_every,
                                       scene_state=scene_state)
     print("_______scene_state: ", scene_state.graph.neural_pipelines.keys())
 

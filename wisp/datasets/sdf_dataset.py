@@ -62,7 +62,7 @@ s                the specified `device` and `dtype`
         normals_transformed = normals
         if t:
             points_transformed = t.transform_points(points)    # => (N, P, 3)
-            print(points_transformed.shape, points.shape)
+            #print(points_transformed.shape, points.shape)
             if normals is not None:
                 normals_transformed = t.transform_normals(normals)  # => (N, P, 3)
             return points_transformed, normals_transformed
@@ -291,7 +291,7 @@ def translationMatrix(dx=0, dy=0, dz=0):
         else:
             if self.matrix.shape:
                 out_pts, _n = self.transform(self.pts, self.matrix)
-                print(idx, type(out_pts), " __getitem_", self.pts.shape)
+                #print(idx, type(out_pts), " __getitem_", self.pts.shape)
                 return out_pts[idx], self.d[idx]
             return self.pts[idx], self.d[idx]
 
