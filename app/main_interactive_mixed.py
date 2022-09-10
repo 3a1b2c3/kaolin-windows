@@ -227,6 +227,26 @@ if __name__ == "__main__":
     optim_cls, optim_params = get_optimizer_from_config(args)
     scene_state = WispState()
     #    def __init__(self, pipeline, dataset, num_epochs, batch_size,
+
+    #   for renderer_id, neural_pipeline in scene_graph.neural_pipelines.items():
+    trainerSDf = globals()[sdF_args.trainer_type](pipeline1, train_dataset1, 
+                                     sdF_args.epochs, 
+                                     sdF_args.batch_size,
+                                      optim_cls, 
+                                      sdF_args.lr, 
+                                      sdF_args.weight_decay,
+                                      sdF_args.grid_lr_weight, 
+                                      optim_params, 
+                                      sdF_args.log_dir, 
+                                      device,
+                                      exp_name=sdF_args.exp_name, 
+                                      info=args_str, 
+                                      extra_args=sdF_arg_dict,
+                                      render_every=sdF_args.render_every, 
+                                      save_every=sdF_args.save_every,
+                                      scene_state=scene_state)
+    print("_______scene_state1: ", scene_state.graph.neural_pipelines.keys(), args_str)
+
     trainer = globals()[args.trainer_type](pipeline, train_dataset, args.epochs, args.batch_size,
                                       optim_cls, args.lr, args.weight_decay,
                                       args.grid_lr_weight, optim_params, args.log_dir, device,
@@ -234,21 +254,7 @@ if __name__ == "__main__":
                                       extra_args=vars(args),
                                       render_every=args.render_every, save_every=args.save_every,
                                       scene_state=scene_state)
-    print("scene_state", scene_state.graph.neural_pipelines.keys())
-    #   for renderer_id, neural_pipeline in scene_graph.neural_pipelines.items():
-    trainerSDf = globals()[ sdF_args.trainer_type](pipeline1, train_dataset1, sdF_args.epochs, sdF_args.batch_size,
-                                      optim_cls, args.lr, 
-                                      sdF_args.weight_decay,
-                                      sdF_args.grid_lr_weight, 
-                                      optim_params, 
-                                      sdF_args.log_dir, device,
-                                      exp_name=args.exp_name, 
-                                      info=args_str, 
-                                      extra_args=sdF_arg_dict,
-                                      render_every=sdF_args.render_every, 
-                                      save_every=sdF_args.save_every,
-                                      scene_state=scene_state)
-    print("_______scene_state: ", scene_state.graph.neural_pipelines.keys())
+    print("_______scene_state2: ", scene_state.graph.neural_pipelines.keys())
 
     if not os.environ.get('WISP_HEADLESS') == '1':
         from wisp.renderer.app.optimization_app import OptimizationApp
