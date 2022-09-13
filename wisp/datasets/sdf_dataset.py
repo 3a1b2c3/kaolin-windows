@@ -289,7 +289,7 @@ def translationMatrix(dx=0, dy=0, dz=0):
         elif self.sample_tex:
             return self.pts[idx], self.d[idx], self.rgb[idx]
         else:
-            if self.matrix.shape:
+            if self.matrix is not None:
                 out_pts, _n = self.transform(self.pts, self.matrix)
                 #print(idx, type(out_pts), " __getitem_", self.pts.shape)
                 return out_pts[idx], self.d[idx]
