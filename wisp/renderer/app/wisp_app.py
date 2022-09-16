@@ -36,6 +36,7 @@ from wisp.ops.spc_utils import create_dual, octree_to_spc, get_level_points_from
 from wisp.ops.spc_formatting import describe_octree
 from .debug_draw import DebugData, init_debug_state, render_debug
 
+
 @contextmanager
 def cuda_activate(img):
     """Context manager simplifying use of pycuda.gl.RegisteredImage.
@@ -45,9 +46,9 @@ def cuda_activate(img):
     yield mapping.array(0, 0)
     mapping.unmap()
 
+
 class WispApp(ABC):
     debug_data = None
-
     """ WispApp is a base app implementation which takes care of the entire lifecycle of the rendering loop:
     this is the infinite queue of events which includes: handling of IO and OS events, rendering frames and running
     backgrounds tasks, i.e. optimizations.
@@ -106,7 +107,7 @@ class WispApp(ABC):
         window = self._create_window(self.width, self.height, window_name)
         self.register_io_mappings()
 
-        # Initialize gui, assumes the window is managed by glumpy with glfw
+          # Initialize gui, assumes the window is managed by glumpy with glfw
         imgui.create_context()
         self.lod_idx = None
         self._is_imgui_focused = False
@@ -115,7 +116,6 @@ class WispApp(ABC):
         self.canvas_dirty = False
         self.debug_data = DebugData()
         self.debug_data.dataset = dataset
-
         # Note: Normally pycuda.gl.autoinit should be invoked here after the window is created,
         # but wisp already initializes it when the library first loads. See wisp.app.cuda_guard.py
 
@@ -355,13 +355,11 @@ class WispApp(ABC):
         imgui.render()
 
     def render_canvas(self, render_core, time_delta, force_render):
-
-        renderbuffer = render_core.render(time_delta, force_render) # main renderer
-
         """ Invoke the render-core to render all neural fields and blend into a single Renderbuffer.
         The rgb and depth channels passed on to the app.
         """
-
+        # The render core returns a RenderBuffer
+        renderbuffer = render_core.render(time_delta, force_render)
         buffer_attachment = renderbuffer.image().rgba
         buffer_attachment = buffer_attachment.flip([0])  # Flip y axis
         img = buffer_attachment.byte().contiguous()
@@ -460,7 +458,7 @@ class WispApp(ABC):
         self.user_mode.handle_timer_tick(dt)
 
         # Toggle interactive mode on or off if needed to maintain interactive FPS rate
-        if self.user_mode.is_interacting() or self._is_imgui_hovered:
+        if self.user_mode.is_interacting():
             self.render_core.set_low_resolution()
         else:
             # Allow a fraction of a second before turning full resolution on.
@@ -475,7 +473,7 @@ class WispApp(ABC):
 
         # render canvas: core proceeds by invoking internal renderers tracers
         # output is rendered on a Renderbuffer object, backed by torch tensors
-        img, depth_img = self.render_canvas(self.render_core, dt, self.canvas_dirty)# main renderer
+        img, depth_img = self.render_canvas(self.render_core, dt, self.canvas_dirty)
 
         # glumpy code injected within the pyimgui render loop to blit the renderer core output to the actual canvas
         # The torch buffers are copied by pycuda to CUDA buffers, connected as shared resources as 2d GL textures
@@ -488,7 +486,6 @@ class WispApp(ABC):
         for gizmo in self.gizmos.values():
             gizmo.render(camera)
         self.prim_painter.render(camera)
-
         # debug draw
         render_debug(self.debug_data, self.wisp_state, camera)
 
@@ -502,11 +499,7 @@ class WispApp(ABC):
         if hook is not None:
             def _run_hook(dt: float):
                 if not self.wisp_state.renderer.background_tasks_paused:
-                    if isinstance(hook, list):
-                        for i in hook:
-                            i()
-                    else:
-                        hook()
+                    hook()
             self.window.on_idle = _run_hook
 
     def on_draw(self, dt=None):
