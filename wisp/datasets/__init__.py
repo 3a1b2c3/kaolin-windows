@@ -8,5 +8,6 @@
 
 from .sdf_dataset import SDFDataset
 from .multiview_dataset import MultiviewDataset
+from .mesh_dataset import MeshDataset
 from .utils import default_collate
 from .transforms import ray_sampler, transform3d

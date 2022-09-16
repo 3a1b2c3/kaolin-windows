@@ -15,6 +15,7 @@ from torch.utils.data import Dataset
 import kaolin.ops.spc as spc_ops
 import wisp.ops.mesh as mesh_ops
 import wisp.ops.spc as wisp_spc_ops
+from wisp.datasets.transforms import Transform3d
 
 
 class MeshDataset(Dataset):
@@ -88,3 +89,14 @@ class MeshDataset(Dataset):
             raise Exception("The dataset is not initialized.")
 
         return self.pts.size()[0]
+
+    def transform(self, points: torch.Tensor, matrix : torch.Tensor, normals: torch.Tensor=None):
+        t = Transform3d(matrix=matrix)#.translate(torch.zeros(3,3))
+        normals_transformed = normals
+        if t:
+            points_transformed = t.transform_points(points)    # => (N, P, 3)
+            #print(points_transformed.shape, points.shape)
+            if normals is not None:
+                normals_transformed = t.transform_normals(normals)  # => (N, P, 3)
+            return points_transformed, normals_transformed
+        return points, normals

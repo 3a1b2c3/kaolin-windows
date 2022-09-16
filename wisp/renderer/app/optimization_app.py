@@ -14,7 +14,7 @@ from wisp.renderer.gizmos.gizmo import Gizmo
 from wisp.renderer.app.wisp_app import WispApp
 from wisp.renderer.core.api import request_redraw
 from wisp.framework import WispState, watch
-from wisp.datasets import MultiviewDataset, SDFDataset
+from wisp.datasets import MultiviewDataset, SDFDataset, MeshDataset
 
 
 class OptimizationApp(WispApp):
