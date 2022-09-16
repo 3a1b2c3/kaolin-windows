@@ -7,6 +7,7 @@
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 from contextlib import contextmanager
 import imgui
+import torch 
 
 from wisp.core.colors import light_purple, white, lime, orange
 from wisp.framework import WispState
@@ -133,13 +134,17 @@ class WidgetSceneGraph(WidgetImgui):
                 self.paint_all_objects_checkbox(state)
                 imgui.same_line()
                 if imgui.tree_node("Objects", imgui.TREE_NODE_DEFAULT_OPEN):
+                    # add debug drawing 
                     for obj_id, obj in bl_renderers.items():
                         if obj.status != 'loaded':
                             continue
+                        #sself.paint_object_debug_checkbox(state, "wireframe")
+                        #self.paint_object_debug_checkbox(state, "points")
+
                         obj_type = type(obj.renderer).__name__
                         obj_color = self.get_object_color(obj_type)
-
                         self.paint_object_checkbox(state, obj_id)
+
                         imgui.same_line()
                         if imgui.tree_node(obj_id, imgui.TREE_NODE_DEFAULT_OPEN):
                             if imgui.tree_node("Add mesh:", imgui.TREE_NODE_DEFAULT_OPEN):
@@ -154,16 +159,26 @@ class WidgetSceneGraph(WidgetImgui):
                                 if imgui.button("Merge", width=100):
                                     pass 
                                 imgui.tree_pop()
-                            if imgui.tree_node("Debug draw:", imgui.TREE_NODE_DEFAULT_OPEN):                
-                                for k, _v in state.debug.items(): 
-                                    self.paint_debug_checkbox(state, k)
-                                imgui.tree_pop()
 
                             imgui.text(f"Type:")
                             imgui.same_line()
                             obj_title = self.get_object_title(obj_type)
                             imgui.text_colored(f"{obj_title}", *obj_color)
+                            flags = imgui.INPUT_TEXT_ALWAYS_INSERT_MODE | imgui.INPUT_TEXT_CHARS_DECIMAL
+                            # matrix
+                            t=torch.Tensor([0,0,0])
+                            r=torch.Tensor([0,0,0])
+                            s=torch.Tensor([1,1,1])
+                            rchanged, rvalues = imgui.input_float3("Transform", t[0], t[1], t[2], flags=flags)
+                            uchanged, uvalues = imgui.input_float3("Rotate", r[0], r[1], r[2], flags=flags)
+                            fchanged, fvalues = imgui.input_float3("Scale", s[0], s[1], s[2], flags=flags)
+                            if imgui.tree_node("Debug draw:", imgui.TREE_NODE_DEFAULT_OPEN):                
+                                for k, _v in state.debug.items(): 
+                                    self.paint_debug_checkbox(state, k)
+                                imgui.tree_pop()
 
+                            if rchanged or uchanged or fchanged:
+                                pass
                             if imgui.tree_node("Properties", imgui.TREE_NODE_DEFAULT_OPEN):
                                 bl_renderer_widget = self.get_bl_renderer_widget(obj_id, obj_type)
                                 if bl_renderer_widget is not None:
