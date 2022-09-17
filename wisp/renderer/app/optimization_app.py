@@ -7,34 +7,26 @@
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 
 from __future__ import annotations
-import sys
 from typing import Callable, Dict, List
-
 from wisp.renderer.gui import WidgetImgui
 from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetOptimization
 from wisp.renderer.gizmos.gizmo import Gizmo
 from wisp.renderer.app.wisp_app import WispApp
 from wisp.renderer.core.api import request_redraw
 from wisp.framework import WispState, watch
-from wisp.datasets import MultiviewDataset, SDFDataset
+from wisp.datasets import MultiviewDataset, SDFDataset, MeshDataset
 
 
 class OptimizationApp(WispApp):
     """ An app for running an optimization and visualizing it's progress interactively in real time. """
 
-    def __init__(self, wisp_state: WispState, 
-                trainer_step_func: Callable[[], None] | List[Callable[[], None]], 
-                experiment_name: str,
-                dataset=None): # debug_data only
-
-        super().__init__(wisp_state, experiment_name, dataset=dataset)
-
+    def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str, dataset=None):
+        super().__init__(wisp_state, experiment_name)
 
         # Tell the renderer to invoke the optimization step() function on every background iteration.
         # The background tasks are constantly invoked by glumpy within the on_idle() event.
         # The actual rendering will occur in-between these calls, invoked by the on_draw() event (which checks if
         # it's time to render the scene again).
-        print(isinstance(trainer_step_func, list), " trainer_step_func:", trainer_step_func)
         self.register_background_task(trainer_step_func)
 
     def init_wisp_state(self, wisp_state: WispState) -> None:

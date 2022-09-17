@@ -260,8 +260,13 @@ if __name__ == "__main__":
         from wisp.renderer.app.optimization_app import OptimizationApp
         scene_state.renderer.device = trainer.device  # Use same device for trainer and renderer
         #    def __init__(self, wisp_state: WispState, trainer_step_func: Callable[[], None], experiment_name: str, dataset=None):
+        
+        def joint_train_step():
+            trainer.iterate()
+            trainerSDf.iterate()
+
         renderer = OptimizationApp(wisp_state=scene_state,
-                                        trainer_step_func=[ trainer.iterate, trainerSDf.iterate],
+                                        trainer_step_func=joint_train_step, #[ trainer.iterate, trainerSDf.iterate],
                                         experiment_name="wisp trainer",
                                         dataset=train_dataset1 # debug_data only
                                         )
