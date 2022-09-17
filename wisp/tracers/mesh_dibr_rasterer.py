@@ -23,11 +23,16 @@ import os
 
 from kaolin.render.camera import perspective_camera, rotate_translate_points
 from kaolin.render.mesh import rasterize
-import kaolin as kaolin
+import kaolin
+from wisp.renderer.core.api import RasterizedRenderer
 from PIL import Image
 """
 The correct way to go about it would be to implement a RasterizedRenderer for rendering meshes -> RenderBuffer.
 For example, kaolin's DIB-R rasterizer could be used as an actual implementation for such RasterizedRenderer.
+
+            "kaolin/render/mesh/rasterization.py",
+            "kaolin/render/mesh/utils.py",
+            "kaolin/render/spc/raytrace.py",
 """
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(ROOT_DIR, os.pardir, os.pardir,
@@ -36,9 +41,26 @@ SIMPLE_GT_DIR = os.path.join(ROOT_DIR, os.pardir, os.pardir,
                              os.pardir, os.pardir, 'samples/dibr/simple/')
 SPHERE_GT_DIR = os.path.join(ROOT_DIR, os.pardir, os.pardir,
                              os.pardir, os.pardir, 'samples/dibr/sphere/')
-class MeshRasterer(object):
-    pass
 
+
+   
+
+class MeshRasterer(RasterizedRenderer):
+    """Tracer class for sparse (packed) radiance fields.
+
+    This tracer class expects the use of a feature grid that has a BLAS (i.e. inherits the BLASGrid
+    class).
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.raymarch_type = raymarch_type
+        self.num_steps = num_steps
+        self.step_size = step_size
+        self.bg_color = bg_color
+    
+    def render(self, camera: Camera) -> RenderBuffer:
+        pass
+'''
 @pytest.mark.parametrize('device', ['cuda'])
 @pytest.mark.parametrize('dtype', [torch.float, torch.double])
 @pytest.mark.parametrize('height,width', [(35, 31)])
@@ -533,3 +555,4 @@ class TestDibrRasterization:
         assert torch.equal(interpolated_features, gt_interpolated_features)
         assert torch.equal(soft_mask, gt_soft_mask)
         assert torch.equal(face_idx, gt_face_idx)
+ '''
