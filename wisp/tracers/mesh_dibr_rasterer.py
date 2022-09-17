@@ -13,19 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
-import pytest
 
-import numpy as np
-import torch
-import math
-import os
-
+from kaolin.render.camera import Camera
 from kaolin.render.camera import perspective_camera, rotate_translate_points
 from kaolin.render.mesh import rasterize
-import kaolin
+
 from wisp.renderer.core.api import RasterizedRenderer
-from PIL import Image
+from wisp.core import RenderBuffer
+
 """
 The correct way to go about it would be to implement a RasterizedRenderer for rendering meshes -> RenderBuffer.
 For example, kaolin's DIB-R rasterizer could be used as an actual implementation for such RasterizedRenderer.
@@ -34,16 +29,6 @@ For example, kaolin's DIB-R rasterizer could be used as an actual implementation
             "kaolin/render/mesh/utils.py",
             "kaolin/render/spc/raytrace.py",
 """
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(ROOT_DIR, os.pardir, os.pardir,
-                         os.pardir, os.pardir, 'samples/')
-SIMPLE_GT_DIR = os.path.join(ROOT_DIR, os.pardir, os.pardir,
-                             os.pardir, os.pardir, 'samples/dibr/simple/')
-SPHERE_GT_DIR = os.path.join(ROOT_DIR, os.pardir, os.pardir,
-                             os.pardir, os.pardir, 'samples/dibr/sphere/')
-
-
-   
 
 class MeshRasterer(RasterizedRenderer):
     """Tracer class for sparse (packed) radiance fields.
@@ -53,6 +38,27 @@ class MeshRasterer(RasterizedRenderer):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    
+    def render(self, camera: Camera) -> RenderBuffer:
+        ''' 
+                if rast_backend in {'nvdiffrast_fwd', 'nvdiffrast'}:
+            if os.getenv('KAOLIN_TEST_NVDIFFRAST', '0') == '0':
+                pytest.skip(f'test is ignored as KAOLIN_TEST_NVDIFFRAST is not set')
+            if face_vertices_z.dtype == torch.double:
+                pytest.skip("nvdiffrast not compatible with double")
+        res =  rasterize(height,
+              width,
+              face_vertices_z,
+              face_vertices_image,
+              face_features,
+              valid_faces=None,
+              multiplier=None,
+              eps=None,
+              backend='cuda')
+        '''
+        return  RenderBuffer()
+
         self.raymarch_type = raymarch_type
         self.num_steps = num_steps
         self.step_size = step_size
@@ -60,6 +66,7 @@ class MeshRasterer(RasterizedRenderer):
     
     def render(self, camera: Camera) -> RenderBuffer:
         pass
+
 '''
 @pytest.mark.parametrize('device', ['cuda'])
 @pytest.mark.parametrize('dtype', [torch.float, torch.double])

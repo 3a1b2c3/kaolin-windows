@@ -9,3 +9,4 @@
 from .base_trainer import BaseTrainer
 from .multiview_trainer import MultiviewTrainer
 from .sdf_trainer import SDFTrainer
+from .mesh_trainer import MeshTrainer
