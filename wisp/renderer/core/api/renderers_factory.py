@@ -7,12 +7,14 @@
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 
 from __future__ import annotations
+import sys
 from collections import defaultdict, deque
 from typing import Type
+
 from wisp.models import Pipeline
 from wisp.models.nefs import BaseNeuralField
 from wisp.tracers import BaseTracer
-from wisp.renderer.core.api.base_renderer import BottomLevelRenderer, RayTracedRenderer
+from wisp.renderer.core.api.base_renderer import BottomLevelRenderer, RasterizedRenderer, RayTracedRenderer
 
 # All renderers supported by the interactive renderer should be registered here
 # Registration can be quickly achieved via the @field_renderer decorator.
@@ -21,7 +23,7 @@ _REGISTERED_RENDERABLE_NEURAL_FIELDS = defaultdict(dict)
 
 
 def register_neural_field_type(neural_field_type: Type[BaseNeuralField],
-                               tracer_type: Type[BaseTracer],
+                               tracer_type: Type[BaseTracer | RasterizedRenderer],
                                renderer_type: Type[BottomLevelRenderer]):
     """ Register new types of neural fields with their associated bottom level renderers using this function.
         This allowes the interactive renderer to display this neural field type on the canvas.
@@ -31,7 +33,7 @@ def register_neural_field_type(neural_field_type: Type[BaseNeuralField],
     _REGISTERED_RENDERABLE_NEURAL_FIELDS[field_name][tracer_name] = renderer_type
 
 
-def _neural_field_to_renderer_cls(pipeline: Pipeline) -> Type[RayTracedRenderer]:
+def _neural_field_to_renderer_cls(pipeline: Pipeline) -> Type[RayTracedRenderer | RasterizedRenderer]:
     tracer_type = type(pipeline.tracer)
 
     # Start by iterating the current tracer type - look for renderers compatible with the current nef type
@@ -39,10 +41,9 @@ def _neural_field_to_renderer_cls(pipeline: Pipeline) -> Type[RayTracedRenderer]
     renderer_cls = None
     while tracer_type:
         tracer_name = tracer_type.__name__
-
         # Look for a renderer compatible with the current tracer type and nef classes
         type_queue = deque([type(pipeline.nef)])
-
+        print("type_queue " , type_queue, pipeline.nef)
         renderer_cls = None
         while type_queue:
             # Query nef + tracer combo
@@ -59,6 +60,8 @@ def _neural_field_to_renderer_cls(pipeline: Pipeline) -> Type[RayTracedRenderer]
                 if len(bases) > 0:
                     type_queue.append(*bases)
 
+        print(supported_tracers, " tracer_name" ,  tracer_name, renderer_cls)
+
         if renderer_cls is not None:
             break   # Found a renderer class
         else:
@@ -72,7 +75,8 @@ def _neural_field_to_renderer_cls(pipeline: Pipeline) -> Type[RayTracedRenderer]
             else:
                 # Reached end of tracers hierarchy or it is too ambiguous, quit and fail gracefully
                 tracer_type = None
-
+    #BottomLevelRendere
+    
     if tracer_type is None:
         raise ValueError(f'Renderer factory encountered an unknown neural pipeline: '
                          f'Neural Field {type(pipeline.nef).__name__} with tracer {type(pipeline.tracer).__name__}. '
@@ -81,9 +85,8 @@ def _neural_field_to_renderer_cls(pipeline: Pipeline) -> Type[RayTracedRenderer]
     return renderer_cls
 
 
-def create_neural_field_renderer(neural_object: Pipeline, **kwargs) -> RayTracedRenderer:
+def create_neural_field_renderer(neural_object: Pipeline, **kwargs) -> RayTracedRenderer | RasterizedRenderer:
     # TODO (operel): support creation of non ray traced renderers
-
     # Fetch the neural field object. If given a pipeline, query the nef field.
     # Otherwise assume we're given the neural field explicitly.
     if isinstance(neural_object, Pipeline):
