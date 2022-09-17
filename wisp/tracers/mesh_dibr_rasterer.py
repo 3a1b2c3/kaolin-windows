@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from kaolin.render.camera import Camera
-#import kaolin
 from kaolin.render.camera import perspective_camera, rotate_translate_points
 from kaolin.render.mesh import rasterize
 
 from wisp.renderer.core.api import RasterizedRenderer
 from wisp.core import RenderBuffer
+
 """
 The correct way to go about it would be to implement a RasterizedRenderer for rendering meshes -> RenderBuffer.
 For example, kaolin's DIB-R rasterizer could be used as an actual implementation for such RasterizedRenderer.
@@ -37,9 +38,15 @@ class MeshRasterer(RasterizedRenderer):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
     
     def render(self, camera: Camera) -> RenderBuffer:
         ''' 
+                if rast_backend in {'nvdiffrast_fwd', 'nvdiffrast'}:
+            if os.getenv('KAOLIN_TEST_NVDIFFRAST', '0') == '0':
+                pytest.skip(f'test is ignored as KAOLIN_TEST_NVDIFFRAST is not set')
+            if face_vertices_z.dtype == torch.double:
+                pytest.skip("nvdiffrast not compatible with double")
         res =  rasterize(height,
               width,
               face_vertices_z,
@@ -51,6 +58,15 @@ class MeshRasterer(RasterizedRenderer):
               backend='cuda')
         '''
         return  RenderBuffer()
+
+        self.raymarch_type = raymarch_type
+        self.num_steps = num_steps
+        self.step_size = step_size
+        self.bg_color = bg_color
+    
+    def render(self, camera: Camera) -> RenderBuffer:
+        pass
+
 '''
 @pytest.mark.parametrize('device', ['cuda'])
 @pytest.mark.parametrize('dtype', [torch.float, torch.double])
