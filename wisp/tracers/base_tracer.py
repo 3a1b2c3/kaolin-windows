@@ -50,7 +50,6 @@ class BaseTracer(nn.Module, ABC):
         """
         pass
 
-
     @abstractmethod
     def trace(self, nef, channels, extra_channels, *args, **kwargs):
         """Apply the forward map on the nef. 

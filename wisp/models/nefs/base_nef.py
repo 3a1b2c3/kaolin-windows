@@ -117,6 +117,17 @@ class BaseNeuralField(nn.Module):
         """
         return 'default'
 
+    @property
+    def device(self):
+        """ Returns the device used to process inputs in this neural field.
+        By default, the device is queried from the first registered torch nn.parameter.
+        Override this property to explicitly specify the device.
+
+        Returns:
+            (torch.device): The expected device for inputs to this neural field.
+        """
+        return next(self.parameters()).device
+
     def _register_forward_function(self, fn, channels):
         """Registers a forward function.
 

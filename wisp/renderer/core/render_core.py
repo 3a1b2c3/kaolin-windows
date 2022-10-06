@@ -33,9 +33,8 @@ class RendererCore:
 
         # Set up the list of available bottom level object renderers, according to scene graph
         self._renderers = None
+        self._tlas = None
         self.refresh_bl_renderers(state)
-
-        self._tlas = self._setup_tlas(state)
 
         self.res_x, self.res_y = None, None
         self.set_full_resolution()
@@ -112,6 +111,12 @@ class RendererCore:
     def refresh_bl_renderers(self, state: WispState) -> None:
         renderers = dict()
         scene_graph = state.graph
+
+        # Remove obsolete bottom level renderers for pipelines that no longer exist
+        for obj_name in list(scene_graph.bl_renderers.keys()):
+            if obj_name not in scene_graph.neural_pipelines:
+                del scene_graph.bl_renderers[obj_name]
+
         # Set up a renderer for all neural pipelines in the scene
         for renderer_id, neural_pipeline in scene_graph.neural_pipelines.items():
             # See if a descriptor for the renderer already exists.
@@ -136,8 +141,11 @@ class RendererCore:
                 raise ValueError(f'Invalid bottom level renderer state: {bl_state.status}')
         self._renderers = renderers
 
+        # Refresh TLAS
+        self._tlas = self._setup_tlas(state)
+
     def _setup_tlas(self, state: WispState):
-        # Currently the top-level acceleration structure uses a straightforward oredered list stub
+        # Currently the top-level acceleration structure uses a straightforward ordered list stub
         return ListTLAS(self._renderers)
 
     def set_full_resolution(self):
@@ -234,12 +242,12 @@ class RendererCore:
         # TODO(ttakikawa): Leaving a note here to think about whether this should be the case...
         # The renderer always needs depth, alpha, and rgb
         required_channels = {"rgb", "depth", "alpha"}
+        selected_canvas_channel = self.state.renderer.selected_canvas_channel.lower()
         visible_objects = set([k for k,v in self.state.graph.visible_objects.items() if v])
         payload = FramePayload(camera=camera, interactive_mode=self.interactive_mode,
                                render_res_x=res_x, render_res_y=res_y, time_delta=time_delta,
                                visible_objects=visible_objects, clear_color=clear_color,
-                               
-                               channels={self.state.renderer.selected_canvas_channel}.union(required_channels))
+                               channels={selected_canvas_channel}.union(required_channels))
         for renderer_id, renderer in self._renderers.items():
             if renderer_id in payload.visible_objects:
                 renderer.pre_render(payload)

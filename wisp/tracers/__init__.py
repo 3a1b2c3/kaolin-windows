@@ -12,3 +12,4 @@ from .packed_sdf_tracer import PackedSDFTracer
 from .sdf_tracer import SDFTracer
 #from .mesh_dibr_rasterer import MeshRasterer
 
+from .packed_spc_tracer import PackedSPCTracer
