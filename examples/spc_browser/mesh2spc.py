@@ -52,30 +52,40 @@ def convert_mesh_to_spc(mesh_path, level, output_path, num_samples):
     print(f'Sampled {sampled_verts.shape[1]} points over the mesh surface.')
 
     # Convert texture to sample-compatible format
-    diffuse_color = mesh.materials[0]['map_Kd']    # Assumes a shape with a single material
-    texture_maps = convert_texture_to_torch_sample_format(diffuse_color, sampled_uvs)  # (1, C, Th, Tw)
-    texture_maps = texture_maps.cuda()
-
-    # Sample colors according to uv-coordinates
-    sampled_uvs = texture_mapping(texture_coordinates=sampled_uvs, texture_maps=texture_maps, mode='nearest')
+    diffuse_color = torch.tensor(
+                        [float(val) for val in [1, 1, 1, 1]])
     # Unbatch
     vertices = sampled_verts.squeeze(0)
-    vertex_colors = sampled_uvs.squeeze(0)
+    vertex_colors = None
+    if mesh.materials and mesh.materials[0].get('map_Kd'):
+        diffuse_color = mesh.materials[0]['map_Kd']    # Assumes a shape with a single material
+        texture_maps = convert_texture_to_torch_sample_format(diffuse_color, sampled_uvs)  # (1, C, Th, Tw)
+        texture_maps = texture_maps.cuda()
 
-    # Normalize to [0,1], and convert to RGBA if needed
-    vertex_colors /= 255
-    if vertex_colors.shape[-1] == 3:
-        vertex_colors = torch.cat([vertex_colors, torch.ones_like(vertex_colors[:, :1])], dim=1)
+        # Sample colors according to uv-coordinates
+        sampled_uvs = texture_mapping(texture_coordinates=sampled_uvs, texture_maps=texture_maps, mode='nearest')
+        vertex_colors = sampled_uvs.squeeze(0)
 
-    spc = unbatched_pointcloud_to_spc(vertices, level, features=vertex_colors)
+        # Normalize to [0,1], and convert to RGBA if needed
+        vertex_colors /= 255
+        if vertex_colors.shape[-1] == 3:
+            vertex_colors = torch.cat([vertex_colors, torch.ones_like(vertex_colors[:, :1])], dim=1)
+        spc = unbatched_pointcloud_to_spc(vertices, level)
+    else:
+        spc = unbatched_pointcloud_to_spc(vertices, level, features=vertex_colors)
     print(f'SPC generated with {spc.point_hierarchies.shape[0]} cells.')
 
     octrees_entry = spc.octrees
-    colors_entry = (255 * spc.features.reshape(-1))
-    npz_record = dict(
-        octree=octrees_entry.cpu().numpy().astype(np.uint8),
-        colors=colors_entry.cpu().numpy().astype(np.uint8)
-    )
+    if spc.features:
+        colors_entry = (255 * spc.features.reshape(-1))
+        npz_record = dict(
+            octree=octrees_entry.cpu().numpy().astype(np.uint8),
+            colors=colors_entry.cpu().numpy().astype(np.uint8)
+        )
+    else:
+        npz_record = dict(
+            octree=octrees_entry.cpu().numpy().astype(np.uint8)
+        )
 
     # Default output path: take filename and save in current working directory
     if output_path is None:
@@ -109,3 +119,7 @@ if __name__ == "__main__":
     output_path = convert_mesh_to_spc(mesh_path=args.obj_path, level=args.level,
                                       output_path=args.output_path, num_samples=args.num_samples)
     print(f'mesh2spc finished successfully, output resides in {output_path}')
+
+
+#py .\mesh2spc.py --obj_path d:\workspace\DATA\obj\cube\cube.obj
+# Assumes a shape with a single material
