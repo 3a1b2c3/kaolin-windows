@@ -6,10 +6,11 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 
-import os
+import os, sys, glob
 import numpy as np
 import torch
 import imgui
+
 from wisp.framework.state import WispState
 from wisp.models.nefs import SPCField
 from wisp.models import Pipeline
@@ -26,6 +27,7 @@ class WidgetSPCSelector(WidgetImgui):
         self.inited = False
 
     def create_pipeline(self, filename, device):
+        print("______________filename: ", filename)
         # Load SPC content from file
         spc_fields = np.load(filename)
 
@@ -44,8 +46,16 @@ class WidgetSPCSelector(WidgetImgui):
         """ Paint will be automatically called by the gui.
             Each widget included by the BrowseSPCApp will be automatically painted.
         """
+
         expanded, _ = imgui.collapsing_header("Object Browser", visible=True, flags=imgui.TREE_NODE_DEFAULT_OPEN)
+        print(expanded, "______________paint ")
         if expanded:
+            # TODO
+            state.extent['dataset_path'] = r'D:\workspace\INTEGRATION\kaolin-wisp\examples\spc_browser'
+            spc_dir = state.extent['dataset_path']
+            available_files = sorted(glob.glob(spc_dir + "/*.npz"))
+            state.extent['available_files'] = available_files  # store inside wisp state object for later
+
             available_files = state.extent['available_files']
             if len(available_files) == 0:
                 if not self.inited:
