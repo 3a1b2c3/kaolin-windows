@@ -142,6 +142,7 @@ class WispApp(ABC):
         self.widgets = self.create_widgets()        # Create gui widgets for this app
         self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
+        #sys.exit()
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
@@ -161,7 +162,11 @@ class WispApp(ABC):
         """ Returns which widgets the gui will display, in order.
         Override to define which gui widgets are used by the wisp app.
         """
-        return [WidgetGPUStats(), WidgetRendererProperties(), WidgetSceneGraph()]
+        return [
+        WidgetGPUStats(),
+        WidgetRendererProperties(), 
+        WidgetSceneGraph(),
+        ]
 
     def create_gizmos(self) -> Dict[str, Gizmo]:
         """ Override to define which gizmos are painted on the canvas by the wisp app.

@@ -20,3 +20,4 @@ from .imgui.widget_scene_graph import *
 from .imgui.widget_sdf_pipeline import *
 from .imgui.widget_sdf_pipeline_renderer import *
 from .imgui.widget_triplanar_grid import *
+from .imgui.widget_spc_selector import *
