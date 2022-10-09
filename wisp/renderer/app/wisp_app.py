@@ -27,7 +27,7 @@ from wisp.renderer.core import RendererCore
 from wisp.renderer.core.control import CameraControlMode, WispKey, WispMouseButton
 from wisp.renderer.core.control import FirstPersonCameraMode, TrackballCameraMode, TurntableCameraMode
 from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainter
-from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui, WidgetSPCSelector
+from wisp.renderer.gui import WidgetRendererProperties, WidgetGPUStats, WidgetSceneGraph, WidgetImgui
 from wisp.ops.spc.conversions import mesh_to_spc
 #from wisp.ops.pointcloud import create_pointcloud_from_images, normalize_pointcloud
 
@@ -142,6 +142,7 @@ class WispApp(ABC):
         self.widgets = self.create_widgets()        # Create gui widgets for this app
         self.gizmos = self.create_gizmos()          # Create canvas widgets for this app
         self.prim_painter = PrimitivesPainter() # grid
+        #sys.exit()
 
         self.register_event_handlers()
         self.change_user_mode(self.default_user_mode())
@@ -161,9 +162,11 @@ class WispApp(ABC):
         """ Returns which widgets the gui will display, in order.
         Override to define which gui widgets are used by the wisp app.
         """
-        return [WidgetGPUStats(),
-         WidgetRendererProperties(), WidgetSceneGraph(),
-                 WidgetSPCSelector()]
+        return [
+        WidgetGPUStats(),
+        WidgetRendererProperties(), 
+        WidgetSceneGraph(),
+        ]
 
     def create_gizmos(self) -> Dict[str, Gizmo]:
         """ Override to define which gizmos are painted on the canvas by the wisp app.
