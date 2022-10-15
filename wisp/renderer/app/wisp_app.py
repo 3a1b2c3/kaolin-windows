@@ -16,7 +16,7 @@ from typing import Optional, Type, Callable, Dict, List, Tuple
 from abc import ABC
 import numpy as np
 import torch
-import pycuda
+import pycuda, pycuda.gl, pycuda.autoinit
 from glumpy import app, gloo, gl, ext
 import imgui
 
