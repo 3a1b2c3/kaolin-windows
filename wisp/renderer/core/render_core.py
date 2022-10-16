@@ -13,6 +13,7 @@ import torch
 import copy
 from collections import defaultdict
 from typing import Dict, List, Iterable
+
 from kaolin.render.camera import Camera, PinholeIntrinsics, OrthographicIntrinsics
 from wisp.framework import WispState, BottomLevelRendererState
 from wisp.core import RenderBuffer, Rays, PrimitivesPack, create_default_channel
@@ -21,6 +22,7 @@ from wisp.renderer.core.api import BottomLevelRenderer, RayTracedRenderer, creat
 from wisp.renderer.core.api import FramePayload
 from wisp.gfx.datalayers import CameraDatalayers
 
+FRANKENRENDER = True
 
 class RendererCore:
     def __init__(self, state: WispState):
@@ -354,11 +356,13 @@ class RendererCore:
         self._last_state['res_y'] = payload.render_res_y
         for renderer_id, renderer in self._renderers.items():
             if renderer_id in payload.visible_objects:
-                print(type(renderer), renderer.channels)
                 renderer.post_render()
+                print(type(renderer), renderer.channels)
 
         # Create an output renderbuffer to contain the currently viewed mode as rgba channel
         output_rb = self.map_output_channels_to_rgba(rb)
+        if FRANKENRENDER and len(self._renderers.items()) > 1:
+            output_rb = self.deepMergeChannels(output_rb, self._renderers.items())
         return output_rb
 
     def needs_refresh(self) -> bool:
@@ -403,6 +407,39 @@ class RendererCore:
         camera_data_layers = self._cameras_data_layers()
         layers_to_draw.extend(camera_data_layers)
         return layers_to_draw
+
+    def deepMergeChannels(self, rb: RenderBuffer, renderers : List):
+        print("deepMergeChannels: ", self.state.renderer.selected_canvas_channel.lower())
+        return rb
+        selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
+        rb_channel = rb.get_channel(selected_output_channel)
+
+        if rb_channel is None:
+            # Unknown channel type configured to view over the canvas.
+            # That can happen if, i.e. no object have traced a RenderBuffer with this channel.
+            # Instead of failing, create an empty rb
+            height, width = rb.rgb.shape[:2]
+            return self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
+
+        # Normalize channel to [0, 1]
+        channels_kit = self.state.graph.channels
+        channel_info = channels_kit.get(selected_output_channel, create_default_channel())
+        normalized_channel = channel_info.normalize_fn(rb_channel.clone())  # Clone to protect from modifications
+
+        # To RGB (in normalized space)
+        # TODO (operel): incorporate color maps
+        channel_dim = normalized_channel.shape[-1]
+        if channel_dim == 1:
+            rgb = torch.cat((normalized_channel, normalized_channel, normalized_channel), dim=-1)
+        elif channel_dim == 2:
+            rgb = torch.cat((normalized_channel, normalized_channel, torch.zeros_like(normalized_channel)), dim=-1)
+        elif channel_dim == 3:
+            rgb = normalized_channel
+        else:
+            raise ValueError('Cannot display channels with more than 3 dimensions over the canvas.')
+
+        canvas_rb = RenderBuffer(rgb=rgb, depth=rb.depth, alpha=rb.alpha)
+        return canvas_rb
 
     def map_output_channels_to_rgba(self, rb: RenderBuffer):
         selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
