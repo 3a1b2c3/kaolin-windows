@@ -362,7 +362,7 @@ class RendererCore:
         # Create an output renderbuffer to contain the currently viewed mode as rgba channel
         output_rb = self.map_output_channels_to_rgba(rb)
         if FRANKENRENDER and len(self._renderers.items()) > 1:
-            output_rb = self.deepMergeChannels(output_rb, self._renderers.items())
+            output_rb = self.mergeChannelByDepth(output_rb, self._renderers.items())
         return output_rb
 
     def needs_refresh(self) -> bool:
@@ -408,38 +408,53 @@ class RendererCore:
         layers_to_draw.extend(camera_data_layers)
         return layers_to_draw
 
-    def deepMergeChannels(self, rb: RenderBuffer, renderers : List):
-        print("deepMergeChannels: ", self.state.renderer.selected_canvas_channel.lower())
-        return rb
+    def mergeChannelByDepth(self, mergeChannel, channel, a_channel):
+        mergedDepth.depth[0][0] = max(d_channel[0][0], mergedDepth.depth[0][0])
+
+    # normalized channels
+    def mergeChannelsByDepth(self, rb: RenderBuffer, renderers : List):
+        height, width = rb.rgb.shape[:2]
         selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
+        mergedDepth: RenderBuffer = self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
         rb_channel = rb.get_channel(selected_output_channel)
 
         if rb_channel is None:
-            # Unknown channel type configured to view over the canvas.
-            # That can happen if, i.e. no object have traced a RenderBuffer with this channel.
-            # Instead of failing, create an empty rb
-            height, width = rb.rgb.shape[:2]
-            return self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
+                # Unknown channel type configured to view over the canvas.
+                # That can happen if, i.e. no object have traced a RenderBuffer with this channel.
+                # Instead of failing, create an empty rb
+                return self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
+        mergedDepth.depth = rb.depth
+        mergedDepth.depth = rb.depth
+        mergedDepth.depth = rb.alpha
+        for renderer_id, renderer in self._renderers.items():
+            print(type(renderer), "depth" in renderer.channels)
+            #mergedDepth
+            # Normalize channel to [0, 1]
+            channels_kit = self.state.graph.channels
+            channel_info = channels_kit.get(selected_output_channel, create_default_channel())
+            d_channel = rb.get_channel("depth")
+            rgb_channel = rb.get_channel("rgb")
+            a_channel = rb.get_channel("a")
+            for row in d_channel:
+                print(type(row), row.shape, d_channel.shape)
+                for c in row:
+                    pass #print(c, type(c), " c: ", c.shape, c)
+            #__deepMergeChannels:  torch.Size([1200, 1600, 3]) torch.Size([1200, 1600, 1])
+            print(channels_kit, "__deepMergeChannels: ", rgb_channel.shape, d_channel.shape, d_channel.size())
+            print("self.state.renderer.selected_canvas_channel.lower()", self.state.renderer.selected_canvas_channel.lower())
+            print(renderer_id, "\nchannel_info: ",  channel_info)
+            print ("max2:", max(d_channel[0][0], mergedDepth.depth[0][0]))
+            self.mergeChannelByDepth(self, mergeChannel, channel):
 
-        # Normalize channel to [0, 1]
-        channels_kit = self.state.graph.channels
-        channel_info = channels_kit.get(selected_output_channel, create_default_channel())
-        normalized_channel = channel_info.normalize_fn(rb_channel.clone())  # Clone to protect from modifications
+            #print ([row.shape for i in range(d_channel.size()[0])])
+            #mergedDepth.depth = max(mergedDepth.depth, d_channel)
+            #mergedDepth.rgb = 
+            #A=A[np.ix_(*np.where(np.any(B, axis=0)), *np.where(np.any(B, axis=1)))]
+            #torch.stack([A[i, B[i]] for i in range(A.size()[0])])
 
-        # To RGB (in normalized space)
-        # TODO (operel): incorporate color maps
-        channel_dim = normalized_channel.shape[-1]
-        if channel_dim == 1:
-            rgb = torch.cat((normalized_channel, normalized_channel, normalized_channel), dim=-1)
-        elif channel_dim == 2:
-            rgb = torch.cat((normalized_channel, normalized_channel, torch.zeros_like(normalized_channel)), dim=-1)
-        elif channel_dim == 3:
-            rgb = normalized_channel
-        else:
-            raise ValueError('Cannot display channels with more than 3 dimensions over the canvas.')
-
-        canvas_rb = RenderBuffer(rgb=rgb, depth=rb.depth, alpha=rb.alpha)
+        canvas_rb = RenderBuffer(rgb=mergedDepth.rgb, depth=mergedDepth.depth, alpha=mergedDepth.alpha)
         return canvas_rb
+
 
     def map_output_channels_to_rgba(self, rb: RenderBuffer):
         selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
