@@ -173,6 +173,7 @@ torch.Size([141467, 1, 3]) __batch, num_samples 141467 1 WPORKIN
 
 """
 def get_features_HashGrid(coords, hashGrid, lod_idx=15):
+    return
     coords = coords[:100] #540
     print("before", coords.shape)
     coords = coords.reshape(2, 50, 3)
