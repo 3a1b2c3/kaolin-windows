@@ -411,14 +411,19 @@ class RendererCore:
     #A=A[np.ix_(*np.where(np.any(B, axis=0)), *np.where(np.any(B, axis=1)))]
     #torch.stack([A[i, B[i]] for i in range(A.size()[0])])
     #print ([row.shape for i in range(d_channel.size()[0])])
+    #d_channel.shape(: torch.Size([1200, 1600, 1])
+    #0 torch.Size([1600, 1]
     def mergeChannelByDepth(self, mergRb: RenderBuffer, d_channel, a_channel, rgb_channels):
         row = 0
         col = 0
-        for row in range(d_channel.size()[0]):
-            if not a_channel or a_channel[row][col] > 0:
-                if d_channel[row][col] > mergRb.depth[row][col]:
-                    mergRb.rgb[row][col] = rgb_channels[row][col]
-                    mergRb.depth[ row][col] = d_channel[row][col]
+        print("d_channel.shape(:", d_channel.shape)
+        for row in range(d_channel.shape[0]):
+            #print(row, d_channel[row].shape)
+            for col in range(d_channel.shape[1]):
+                if not a_channel or a_channel[row][col] > 0:
+                    if d_channel[row][col] > mergRb.depth[row][col]:
+                        mergRb.rgb[row][col] = rgb_channels[row][col]
+                        mergRb.depth[ row][col] = d_channel[row][col]
 
         return mergRb
 
