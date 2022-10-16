@@ -5,6 +5,7 @@
 # and any modifications thereto.  Any use, reproduction, disclosure or
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
+import sys 
 
 def setup_cuda_context():
     """ Carefully load CUDA based frameworks to avoid interference.
@@ -28,11 +29,6 @@ def setup_cuda_context():
             # Let glumpy use glfw to create an invisible window
             window = app.Window(width=10, height=10, title='dummy', visible=False)
 
-            # pycuda initializes the default context with "cuGLCtxCreate", but this call will fail if a GL context
-            # is not currently set. Therefore import is invoked only after glfw obtains a GL context.
-            # See: https://documen.tician.de/pycuda/gl.html#module-pycuda.gl.autoinit
-            import pycuda.gl.autoinit
-
             # Next tell torch to initialize the primary cuda context
             import torch
             torch.cuda.init()
@@ -41,7 +37,13 @@ def setup_cuda_context():
             import pycuda.driver as cuda
             pycuda_context = cuda.Device(0).retain_primary_context()
 
-        except (ModuleNotFoundError, ImportError):
+            # pycuda initializes the default context with "cuGLCtxCreate", but this call will fail if a GL context
+            # is not currently set. Therefore import is invoked only after glfw obtains a GL context.
+            # See: https://documen.tician.de/pycuda/gl.html#module-pycuda.gl.autoinit
+            import pycuda.gl.autoinit
+
+        except (ModuleNotFoundError, ImportError) as e:
+            sys.exit(e)
             pass  # Don't fail if interactive mode is disabled (e.g: glumpy or pycuda are unavailable)
         finally:
             if window is not None:
