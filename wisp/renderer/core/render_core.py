@@ -418,13 +418,11 @@ class RendererCore:
         col = 0
         print("d_channel.shape(:", d_channel.shape)
         for row in range(d_channel.shape[0]):
-            #print(row, d_channel[row].shape)
             for col in range(d_channel.shape[1]):
                 if not a_channel or a_channel[row][col] > 0:
                     if d_channel[row][col] > mergRb.depth[row][col]:
                         mergRb.rgb[row][col] = rgb_channels[row][col]
                         mergRb.depth[ row][col] = d_channel[row][col]
-
         return mergRb
 
     # normalized channels
@@ -439,22 +437,22 @@ class RendererCore:
                 # That can happen if, i.e. no object have traced a RenderBuffer with this channel.
                 # Instead of failing, create an empty rb
                 return self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
-        mergedBuffer.depth = rb.depth
-        mergedBuffer.depth = rb.depth
-        mergedBuffer.depth = rb.alpha
+        print(selected_output_channel)
         for renderer_id, renderer in self._renderers.items():
+            mergedBuffer.rgb = rb.get_channel("rgb") # merged Buffer
+            mergedBuffer.depth = rb.get_channel("depth")
+            mergedBuffer.alpha = rb.get_channel("alpha")
+            continue
             print(type(renderer), "depth" in renderer.channels)
-            #mergedBuffer
-            # Normalize channel to [0, 1]
             channels_kit = self.state.graph.channels
-            channel_info = channels_kit.get(selected_output_channel, create_default_channel())
+            #channel_info = channels_kit.get(selected_output_channel, create_default_channel())
             d_channel = rb.get_channel("depth")
             rgb_channels = rb.get_channel("rgb")
             a_channel = rb.get_channel("a")
 
             #__deepMergeChannels:  torch.Size([1200, 1600, 3]) torch.Size([1200, 1600, 1])
-            print(channels_kit, "\n__deepMergeChannels: ", rgb_channels.shape, d_channel.shape, d_channel.size())
-            print("self.state.renderer.selected_canvas_channel.lower()", self.state.renderer.selected_canvas_channel.lower())
+            #print(channels_kit, "\n__deepMergeChannels: ", rgb_channels.shape, d_channel.shape, d_channel.size())
+            print(renderer_id, "__self.state.renderer.selected_canvas_channel.lower()", self.state.renderer.selected_canvas_channel.lower())
             #print(renderer_id, "\nchannel_info: ",  channel_info)
             #print ("max2:", max(d_channel[0][0], mergedBuffer.depth[0][0]))
             self.mergeChannelByDepth(mergedBuffer, d_channel, a_channel, rgb_channels)
