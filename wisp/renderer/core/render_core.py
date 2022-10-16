@@ -354,6 +354,7 @@ class RendererCore:
         self._last_state['res_y'] = payload.render_res_y
         for renderer_id, renderer in self._renderers.items():
             if renderer_id in payload.visible_objects:
+                print(type(renderer), renderer.channels)
                 renderer.post_render()
 
         # Create an output renderbuffer to contain the currently viewed mode as rgba channel
