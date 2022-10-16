@@ -6,6 +6,7 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
 import sys 
+import pycuda.autoinit, pycuda.gl as cuda_gl
 
 def setup_cuda_context():
     """ Carefully load CUDA based frameworks to avoid interference.
