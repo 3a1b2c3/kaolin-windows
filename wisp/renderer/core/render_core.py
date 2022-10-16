@@ -361,8 +361,8 @@ class RendererCore:
 
         # Create an output renderbuffer to contain the currently viewed mode as rgba channel
         output_rb = self.map_output_channels_to_rgba(rb)
-        if FRANKENRENDER and len(self._renderers.items()) > 1:
-            output_rb = self.mergeChannelByDepth(output_rb, self._renderers.items())
+        if FRANKENRENDER and len(self._renderers.items()) > 1: # rgb or depth channel show
+            output_rb = self.mergeChannelsByDepth(output_rb, self._renderers.items())
         return output_rb
 
     def needs_refresh(self) -> bool:
@@ -408,14 +408,21 @@ class RendererCore:
         layers_to_draw.extend(camera_data_layers)
         return layers_to_draw
 
-    def mergeChannelByDepth(self, mergeChannel, channel, a_channel):
-        mergedDepth.depth[0][0] = max(d_channel[0][0], mergedDepth.depth[0][0])
+    #A=A[np.ix_(*np.where(np.any(B, axis=0)), *np.where(np.any(B, axis=1)))]
+    #torch.stack([A[i, B[i]] for i in range(A.size()[0])])
+    def mergeChannelByDepth(self, mergRb: RenderBuffer, d_channel, a_channel, rgb_channels):
+        if not a_channel or a_channel[0][0] > 0:
+            if d_channel[0][0] > mergRb.depth[0][0]:
+                mergRb.rgb[0][0] = rgb_channels[0][0]
+                mergRb.depth[0][0] = d_channel[0][0]
+
+        return mergRb
 
     # normalized channels
     def mergeChannelsByDepth(self, rb: RenderBuffer, renderers : List):
         height, width = rb.rgb.shape[:2]
         selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
-        mergedDepth: RenderBuffer = self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
+        mergedBuffer: RenderBuffer = self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
         rb_channel = rb.get_channel(selected_output_channel)
 
         if rb_channel is None:
@@ -423,36 +430,35 @@ class RendererCore:
                 # That can happen if, i.e. no object have traced a RenderBuffer with this channel.
                 # Instead of failing, create an empty rb
                 return self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
-        mergedDepth.depth = rb.depth
-        mergedDepth.depth = rb.depth
-        mergedDepth.depth = rb.alpha
+        mergedBuffer.depth = rb.depth
+        mergedBuffer.depth = rb.depth
+        mergedBuffer.depth = rb.alpha
         for renderer_id, renderer in self._renderers.items():
             print(type(renderer), "depth" in renderer.channels)
-            #mergedDepth
+            #mergedBuffer
             # Normalize channel to [0, 1]
             channels_kit = self.state.graph.channels
             channel_info = channels_kit.get(selected_output_channel, create_default_channel())
             d_channel = rb.get_channel("depth")
-            rgb_channel = rb.get_channel("rgb")
+            rgb_channels = rb.get_channel("rgb")
             a_channel = rb.get_channel("a")
             for row in d_channel:
                 print(type(row), row.shape, d_channel.shape)
                 for c in row:
                     pass #print(c, type(c), " c: ", c.shape, c)
             #__deepMergeChannels:  torch.Size([1200, 1600, 3]) torch.Size([1200, 1600, 1])
-            print(channels_kit, "__deepMergeChannels: ", rgb_channel.shape, d_channel.shape, d_channel.size())
+            print(channels_kit, "__deepMergeChannels: ", rgb_channels.shape, d_channel.shape, d_channel.size())
             print("self.state.renderer.selected_canvas_channel.lower()", self.state.renderer.selected_canvas_channel.lower())
             print(renderer_id, "\nchannel_info: ",  channel_info)
-            print ("max2:", max(d_channel[0][0], mergedDepth.depth[0][0]))
-            self.mergeChannelByDepth(self, mergeChannel, channel):
+            #print ("max2:", max(d_channel[0][0], mergedBuffer.depth[0][0]))
+            self.mergeChannelByDepth(mergedBuffer, d_channel, a_channel, rgb_channels)
 
             #print ([row.shape for i in range(d_channel.size()[0])])
-            #mergedDepth.depth = max(mergedDepth.depth, d_channel)
-            #mergedDepth.rgb = 
-            #A=A[np.ix_(*np.where(np.any(B, axis=0)), *np.where(np.any(B, axis=1)))]
-            #torch.stack([A[i, B[i]] for i in range(A.size()[0])])
+            #mergedBuffer.depth = max(mergedBuffer.depth, d_channel)
+            #mergedBuffer.rgb = 
 
-        canvas_rb = RenderBuffer(rgb=mergedDepth.rgb, depth=mergedDepth.depth, alpha=mergedDepth.alpha)
+
+        canvas_rb = RenderBuffer(rgb=mergedBuffer.rgb, depth=mergedBuffer.depth, alpha=mergedBuffer.alpha)
         return canvas_rb
 
 
