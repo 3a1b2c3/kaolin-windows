@@ -432,7 +432,7 @@ class RendererCore:
                     if d_channel[row][col] > mergRb.depth[row][col]:
                         mergRb.rgb[row][col] = rgb_channels[row][col]
         """
-        mergRb.depth = torch.max(mergRb.depth, d_channel)
+        mergRb.depth = torch.min(mergRb.depth, d_channel)
         return mergRb
 
     # normalized channels
