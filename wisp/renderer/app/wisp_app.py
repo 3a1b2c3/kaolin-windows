@@ -364,9 +364,9 @@ class WispApp(ABC):
         The rgb and depth channels passed on to the app.
         """
         # The render core returns a RenderBuffer
-        renderbuffer, m = render_core.render(time_delta, force_render)
+        renderbuffer, mbuffer = render_core.render(time_delta, force_render)
         if FRANKENRENDER:
-            renderbuffer = m
+            renderbuffer = mbuffer
         buffer_attachment = renderbuffer.image().rgba
         buffer_attachment = buffer_attachment.flip([0])  # Flip y axis
         img = buffer_attachment.byte().contiguous()

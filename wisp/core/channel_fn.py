@@ -156,6 +156,7 @@ def blend_linear(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch.Tensor, alpha
     """
     return c1 + c2 * (1.0 - c1)
 
+#TODO
 def blend_depth_composite(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch.Tensor, alpha2: torch.Tensor):
     """ An alpha compositing op where a front pixel is alpha blended with the background pixel
     (in a usual painter's algorithm manner).
