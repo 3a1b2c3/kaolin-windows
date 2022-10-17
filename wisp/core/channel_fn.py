@@ -156,6 +156,26 @@ def blend_linear(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch.Tensor, alpha
     """
     return c1 + c2 * (1.0 - c1)
 
+def blend_depth_composite(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch.Tensor, alpha2: torch.Tensor):
+    """ An alpha compositing op where a front pixel is alpha blended with the background pixel
+    (in a usual painter's algorithm manner).
+    Useful for blending channels such as RGB.
+    See: https://en.wikipedia.org/wiki/Alpha_compositing
+
+    Args:
+        c1 (torch.Tensor): first channel tensor of an arbitrary shape.
+        c2 (torch.Tensor): second channel tensor, in the shape of c1.
+        alpha1 (torch.Tensor): alpha channel tensor, corresponding to first channel, in the shape of c1.
+        alpha2 (torch.Tensor): alpha channel tensor, corresponding to second channel, in the shape of c1.
+
+    Returns:
+        (torch.Tensor): Blended channel in the shape of c1
+    """
+    alpha_out = alpha1 + alpha2 * (1.0 - alpha1)
+    c_out = torch.where(condition=alpha_out > 0,
+                        input=(c1 * alpha1 + c2 * alpha2 * (1.0 - alpha1)) / alpha_out,
+                        other=torch.zeros_like(c1))
+    return c_out
 
 def blend_alpha_composite_over(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch.Tensor, alpha2: torch.Tensor):
     """ An alpha compositing op where a front pixel is alpha blended with the background pixel

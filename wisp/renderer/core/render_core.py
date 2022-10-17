@@ -21,6 +21,7 @@ from wisp.ops.raygen import generate_pinhole_rays, generate_ortho_rays, generate
 from wisp.renderer.core.api import BottomLevelRenderer, RayTracedRenderer, create_neural_field_renderer
 from wisp.renderer.core.api import FramePayload
 from wisp.gfx.datalayers import CameraDatalayers
+from wisp.core.channel_fn import *
 
 FRANKENRENDER = True
 
@@ -43,6 +44,7 @@ class RendererCore:
 
         self._last_state = dict()
         self._last_renderbuffer = None
+        self._last_mergedRenderbuffer = None
 
         # Minimal resolution supported by RendererCore
         self.MIN_RES = 128
@@ -295,7 +297,7 @@ class RendererCore:
         visible_renderers = [r for r_id, r in self._renderers.items() if r_id in payload.visible_objects]
         renderers_to_refresh = list(filter(lambda renderer: renderer.needs_refresh(payload), visible_renderers))
         if not self.needs_refresh() and len(renderers_to_refresh) == 0 and not force_render:
-            return self._last_renderbuffer, self._last_renderbuffer # No need to regenerate..
+            return self._last_renderbuffer, self._last_mergedRenderbuffer # No need to regenerate.. TODO
 
         # Generate rays
         rays = self.raygen(camera, res_x, res_y)
@@ -341,9 +343,10 @@ class RendererCore:
             rb.depth = rb.depth.to(rb_dtype)
             if FRANKENRENDER: # rgb or depth channel show
                 print(" render_payload: ", type(renderer))
-                #merged_rb = self.mergeChannelByDepth(merged_rb, rb.depth, rb.alpha, rb.rgb)
+                merged_rb = self.mergeChannelByDepth(merged_rb, rb.depth, rb.alpha, rb.rgb)
 
             out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
+        self._last_mergedRenderbuffer =  merged_rb
         return out_rb, merged_rb
 
     def _post_render(self, payload: FramePayload, rb: RenderBuffer) -> RenderBuffer:
@@ -416,26 +419,19 @@ class RendererCore:
     #print ([row.shape for i in range(d_channel.size()[0])])
     #d_channel.shape(: torch.Size([1200, 1600, 1])
     #0 torch.Size([1600, 1]
-    """
-    
->>> a = torch.randn(4)
->>> a
-tensor([ 0.2942, -0.7416,  0.2653, -0.1584])
->>> b = torch.randn(4)
->>> b
-tensor([ 0.8722, -1.7421, -0.4141, -0.5055])
->>> torch.max(a, b)
-tensor([ 0.8722, -0.7416,  0.2653, -0.1584])
-    """
+
     def mergeChannelByDepth(self, mergRb: RenderBuffer, d_channel, a_channel, rgb_channels):
-        row = 0
-        col = 0
         print("d_channel.shape(:", d_channel.shape)
+
+        """
+        blend_depth_composite(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch.Tensor, alpha2: torch.Tensor):
+        out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
         for row in range(d_channel.shape[0]):
             for col in range(d_channel.shape[1]):
                 if not a_channel.size() or a_channel[row][col] > 0:
                     if d_channel[row][col] > mergRb.depth[row][col]:
                         mergRb.rgb[row][col] = rgb_channels[row][col]
+        """
         mergRb.depth = torch.max(mergRb.depth, d_channel)
         return mergRb
 
