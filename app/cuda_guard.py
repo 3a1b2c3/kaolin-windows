@@ -44,7 +44,8 @@ def setup_cuda_context():
             import pycuda.gl.autoinit
 
         except (ModuleNotFoundError, ImportError) as e:
-            sys.exit(e)
+            print(e)
+            sys.exit()
             pass  # Don't fail if interactive mode is disabled (e.g: glumpy or pycuda are unavailable)
         finally:
             if window is not None:
