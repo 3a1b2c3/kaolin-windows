@@ -414,24 +414,11 @@ class RendererCore:
         layers_to_draw.extend(camera_data_layers)
         return layers_to_draw
 
-    #A=A[np.ix_(*np.where(np.any(B, axis=0)), *np.where(np.any(B, axis=1)))]
-    #torch.stack([A[i, B[i]] for i in range(A.size()[0])])
-    #print ([row.shape for i in range(d_channel.size()[0])])
-    #d_channel.shape(: torch.Size([1200, 1600, 1])
-    #0 torch.Size([1600, 1]
-
     def mergeChannelByDepth(self, mergRb: RenderBuffer, d_channel, a_channel, rgb_channels):
         print("d_channel.shape(:", d_channel.shape)
 
-        """
-        blend_depth_composite(c1: torch.Tensor, c2: torch.Tensor, alpha1: torch.Tensor, alpha2: torch.Tensor):
-        out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
-        for row in range(d_channel.shape[0]):
-            for col in range(d_channel.shape[1]):
-                if not a_channel.size() or a_channel[row][col] > 0:
-                    if d_channel[row][col] > mergRb.depth[row][col]:
-                        mergRb.rgb[row][col] = rgb_channels[row][col]
-        """
+        mergRb.alpha = blend_linear(mergRb.alpha, a_channel, mergRb.alpha, a_channel)
+        mergRb.rgb = blend_depth_composite(mergRb.rgb, rgb_channels, mergRb.alpha, a_channel)
         mergRb.depth = torch.min(mergRb.depth, d_channel)
         return mergRb
 
