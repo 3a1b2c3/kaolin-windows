@@ -23,7 +23,7 @@ import imgui
 from kaolin.render.camera import Camera
 
 from wisp.framework import WispState, watch
-from wisp.renderer.core import RendererCore
+from wisp.renderer.core import RendererCore, FRANKENRENDER
 from wisp.renderer.core.control import CameraControlMode, WispKey, WispMouseButton
 from wisp.renderer.core.control import FirstPersonCameraMode, TrackballCameraMode, TurntableCameraMode
 from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainter
@@ -365,6 +365,8 @@ class WispApp(ABC):
         """
         # The render core returns a RenderBuffer
         renderbuffer, m = render_core.render(time_delta, force_render)
+        if FRANKENRENDER:
+            renderbuffer = m
         buffer_attachment = renderbuffer.image().rgba
         buffer_attachment = buffer_attachment.flip([0])  # Flip y axis
         img = buffer_attachment.byte().contiguous()
