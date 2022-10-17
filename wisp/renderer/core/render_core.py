@@ -209,9 +209,9 @@ class RendererCore:
             (wisp.core.RenderBuffer): The rendered buffer.
         """
         payload = self._prepare_payload(time_delta)
-        rb = self.render_payload(payload, force_render)
+        rb, mb = self.render_payload(payload, force_render)
         output_rb = self._post_render(payload, rb)
-        return output_rb
+        return output_rb, mb
 
     def _prepare_payload(self, time_delta=None) -> FramePayload:
         """This function will prepare the FramePayload for the current frame.
@@ -306,6 +306,7 @@ class RendererCore:
         clear_depth = self.state.renderer.clear_depth_value
 
         out_rb = self._create_empty_rb(height=camera.height, width=camera.width, dtype=rb_dtype)
+        merged_rb = self._create_empty_rb(height=camera.height, width=camera.width, dtype=rb_dtype)
         for renderer in renderers_in_view:
             if isinstance(renderer, RayTracedRenderer):
                 in_rays = rays.to(device=renderer.device, dtype=renderer.dtype)
@@ -313,13 +314,13 @@ class RendererCore:
             else:   # RasterizedRenderer
                 in_cam = self.camera.to(device=renderer.device, dtype=renderer.dtype)
                 rb = renderer.render(in_cam)
-
+            print(" render_payload: ", type(renderer))
             rb = rb.to(device=self.device)
             rb.rgb = rb.rgb.to(dtype=rb_dtype)
             
             rb.alpha = rb.alpha.to(dtype=rb_dtype)
             rb.depth = rb.depth.to(dtype=rb_dtype)
-
+       
             # TODO (operel): if rb.depth is None -> painters algorithm
             # Normalize ray-traced depth buffer to graphics api range
             img_dims = rb.depth.shape
@@ -339,9 +340,11 @@ class RendererCore:
             rb.depth[alpha_mask] = clear_depth
 
             rb.depth = rb.depth.to(rb_dtype)
-            out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
+            if FRANKENRENDER: # rgb or depth channel show
+                merged_rb = self.mergeChannelByDepth(merged_rb, rb.depth, rb.alpha, rb.rgb)
 
-        return out_rb
+            out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
+        return out_rb, merged_rb
 
     def _post_render(self, payload: FramePayload, rb: RenderBuffer) -> RenderBuffer:
         # Update current resolution in case it was decreased to maintain fps
@@ -358,11 +361,11 @@ class RendererCore:
             if renderer_id in payload.visible_objects:
                 renderer.post_render()
                 print(type(renderer), renderer.channels)
-
+                if FRANKENRENDER and len(self._renderers.items()) > 1: # rgb or depth channel show
+                    pass #rb = self.mergeChannelsByDepth(rb, payload, renderer)
         # Create an output renderbuffer to contain the currently viewed mode as rgba channel
         output_rb = self.map_output_channels_to_rgba(rb)
-        if FRANKENRENDER and len(self._renderers.items()) > 1: # rgb or depth channel show
-            output_rb = self.mergeChannelsByDepth(output_rb, self._renderers.items())
+
         return output_rb
 
     def needs_refresh(self) -> bool:
@@ -413,6 +416,17 @@ class RendererCore:
     #print ([row.shape for i in range(d_channel.size()[0])])
     #d_channel.shape(: torch.Size([1200, 1600, 1])
     #0 torch.Size([1600, 1]
+    """
+    
+>>> a = torch.randn(4)
+>>> a
+tensor([ 0.2942, -0.7416,  0.2653, -0.1584])
+>>> b = torch.randn(4)
+>>> b
+tensor([ 0.8722, -1.7421, -0.4141, -0.5055])
+>>> torch.max(a, b)
+tensor([ 0.8722, -0.7416,  0.2653, -0.1584])
+    """
     def mergeChannelByDepth(self, mergRb: RenderBuffer, d_channel, a_channel, rgb_channels):
         row = 0
         col = 0
@@ -422,43 +436,40 @@ class RendererCore:
                 if not a_channel or a_channel[row][col] > 0:
                     if d_channel[row][col] > mergRb.depth[row][col]:
                         mergRb.rgb[row][col] = rgb_channels[row][col]
-                        mergRb.depth[ row][col] = d_channel[row][col]
+        mergRb.depth = torch.max(mergRb.depth, d_channel)
         return mergRb
 
     # normalized channels
-    def mergeChannelsByDepth(self, rb: RenderBuffer, renderers : List):
-        height, width = rb.rgb.shape[:2]
+    '''
+    @dataclass
+class FramePayload:
+    """This is a dataclass which holds metadata for the current frame.
+    """
+    camera: Camera
+    visible_objects: Set[str]
+    interactive_mode: bool
+    render_res_x: int
+    render_res_y: int
+    time_delta: float   # In seconds
+    clear_color: Tuple[float, float, float]
+    channels: Set[str] # Channels requested for the render.
+
+like this: https://pytorch.org/docs/stable/torch.html#torch.max 369
+
+    '''
+    def mergeChannelsByDepth(self, rb: RenderBuffer, renderer):
         selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
-        mergedBuffer: RenderBuffer = self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
-        rb_channel = rb.get_channel(selected_output_channel)
+        mergedBuffer: RenderBuffer = RenderBuffer(rgb=rb.rgb, depth=rb.depth, alpha=rb.alpha)
+        if not selected_output_channel or not "depth" in renderer.channels:
+            return rb
+        channels_kit = self.state.graph.channels
+        channel_info = channels_kit.get(selected_output_channel, create_default_channel())
+        print(type(renderer), selected_output_channel)
+        print(selected_output_channel, "channel_info: ", channels_kit.keys(), channel_info)
+        #['rgb', 'alpha', 'depth', 'normal', 'hit', 'err', 'gt']
+        #self.mergeChannelByDepth(mergedBuffer, d_channel, a_channel, rgb_channels)
 
-        if rb_channel is None:
-                # Unknown channel type configured to view over the canvas.
-                # That can happen if, i.e. no object have traced a RenderBuffer with this channel.
-                # Instead of failing, create an empty rb
-                return self._create_empty_rb(height=height, width=width, dtype=rb.rgb.dtype)
-        print(selected_output_channel)
-        for renderer_id, renderer in self._renderers.items():
-            mergedBuffer.rgb = rb.get_channel("rgb") # merged Buffer
-            mergedBuffer.depth = rb.get_channel("depth")
-            mergedBuffer.alpha = rb.get_channel("alpha")
-            continue
-            print(type(renderer), "depth" in renderer.channels)
-            channels_kit = self.state.graph.channels
-            #channel_info = channels_kit.get(selected_output_channel, create_default_channel())
-            d_channel = rb.get_channel("depth")
-            rgb_channels = rb.get_channel("rgb")
-            a_channel = rb.get_channel("a")
-
-            #__deepMergeChannels:  torch.Size([1200, 1600, 3]) torch.Size([1200, 1600, 1])
-            #print(channels_kit, "\n__deepMergeChannels: ", rgb_channels.shape, d_channel.shape, d_channel.size())
-            print(renderer_id, "__self.state.renderer.selected_canvas_channel.lower()", self.state.renderer.selected_canvas_channel.lower())
-            #print(renderer_id, "\nchannel_info: ",  channel_info)
-            #print ("max2:", max(d_channel[0][0], mergedBuffer.depth[0][0]))
-            self.mergeChannelByDepth(mergedBuffer, d_channel, a_channel, rgb_channels)
-
-        canvas_rb = RenderBuffer(rgb=mergedBuffer.rgb, depth=mergedBuffer.depth, alpha=mergedBuffer.alpha)
-        return canvas_rb
+        return mergedBuffer
 
 
     def map_output_channels_to_rgba(self, rb: RenderBuffer):
