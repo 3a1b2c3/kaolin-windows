@@ -209,9 +209,9 @@ class RendererCore:
             (wisp.core.RenderBuffer): The rendered buffer.
         """
         payload = self._prepare_payload(time_delta)
-        rb, mb = self.render_payload(payload, force_render)
+        rb, mb_rb = self.render_payload(payload, force_render)
         output_rb = self._post_render(payload, rb)
-        return output_rb, mb
+        return output_rb, mb_rb
 
     def _prepare_payload(self, time_delta=None) -> FramePayload:
         """This function will prepare the FramePayload for the current frame.
@@ -295,7 +295,7 @@ class RendererCore:
         visible_renderers = [r for r_id, r in self._renderers.items() if r_id in payload.visible_objects]
         renderers_to_refresh = list(filter(lambda renderer: renderer.needs_refresh(payload), visible_renderers))
         if not self.needs_refresh() and len(renderers_to_refresh) == 0 and not force_render:
-            return self._last_renderbuffer  # No need to regenerate..
+            return self._last_renderbuffer, self._last_renderbuffer # No need to regenerate..
 
         # Generate rays
         rays = self.raygen(camera, res_x, res_y)
@@ -314,7 +314,6 @@ class RendererCore:
             else:   # RasterizedRenderer
                 in_cam = self.camera.to(device=renderer.device, dtype=renderer.dtype)
                 rb = renderer.render(in_cam)
-            print(" render_payload: ", type(renderer))
             rb = rb.to(device=self.device)
             rb.rgb = rb.rgb.to(dtype=rb_dtype)
             
@@ -341,7 +340,8 @@ class RendererCore:
 
             rb.depth = rb.depth.to(rb_dtype)
             if FRANKENRENDER: # rgb or depth channel show
-                merged_rb = self.mergeChannelByDepth(merged_rb, rb.depth, rb.alpha, rb.rgb)
+                print(" render_payload: ", type(renderer))
+                #merged_rb = self.mergeChannelByDepth(merged_rb, rb.depth, rb.alpha, rb.rgb)
 
             out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
         return out_rb, merged_rb
@@ -433,7 +433,7 @@ tensor([ 0.8722, -0.7416,  0.2653, -0.1584])
         print("d_channel.shape(:", d_channel.shape)
         for row in range(d_channel.shape[0]):
             for col in range(d_channel.shape[1]):
-                if not a_channel or a_channel[row][col] > 0:
+                if not a_channel.size() or a_channel[row][col] > 0:
                     if d_channel[row][col] > mergRb.depth[row][col]:
                         mergRb.rgb[row][col] = rgb_channels[row][col]
         mergRb.depth = torch.max(mergRb.depth, d_channel)
