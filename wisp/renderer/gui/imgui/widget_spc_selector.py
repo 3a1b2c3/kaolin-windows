@@ -18,6 +18,7 @@ from wisp.tracers import PackedSPCTracer
 from wisp.renderer.gui import WidgetImgui
 from wisp.renderer.core.api import add_to_scene_graph, remove_from_scene_graph
 
+oPath = r'D:\workspace\INTEGRATION\kaolin-wisp\examples\spc_browser' #TODO
 
 class WidgetSPCSelector(WidgetImgui):
     """ A custom widget which lets users browse SPC files, and select them to populate the scene graph. """
@@ -49,7 +50,7 @@ class WidgetSPCSelector(WidgetImgui):
         expanded, _ = imgui.collapsing_header("Object Browser", visible=True, flags=imgui.TREE_NODE_DEFAULT_OPEN)
         if expanded:
             # TODO
-            state.extent['dataset_path'] = r'D:\workspace\INTEGRATION\kaolin-wisp\examples\spc_browser'
+            state.extent['dataset_path'] = oPath
             spc_dir = state.extent['dataset_path']
             available_files = sorted(glob.glob(spc_dir + "/*.npz"))
             state.extent['available_files'] = available_files  # store inside wisp state object for later
