@@ -343,10 +343,10 @@ class RendererCore:
             rb.depth = rb.depth.to(rb_dtype)
             if FRANKENRENDER: # rgb or depth channel show
                 print(" render_payload: ", type(renderer))
-                merged_rb = self.mergeChannelByDepth(merged_rb, rb.depth, rb.alpha, rb.rgb)
+                merged_rb = out_rb.blend(merged_rb, channel_kit=self.state.graph.channels)
 
             out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
-            merged_rb = out_rb.blend(merged_rb, channel_kit=self.state.graph.channels)
+
         self._last_mergedRenderbuffer = merged_rb
         return out_rb, merged_rb
 
