@@ -13,6 +13,7 @@ import torch
 import copy
 from collections import defaultdict
 from typing import Dict, List, Iterable
+
 from kaolin.render.camera import Camera, PinholeIntrinsics, OrthographicIntrinsics
 from wisp.framework import WispState, BottomLevelRendererState
 from wisp.core import RenderBuffer, Rays, PrimitivesPack, create_default_channel
@@ -21,6 +22,8 @@ from wisp.renderer.core.api import BottomLevelRenderer, RayTracedRenderer, creat
 from wisp.renderer.core.api import FramePayload
 from wisp.gfx.datalayers import CameraDatalayers
 
+
+FRANKENRENDER = True
 
 class RendererCore:
     def __init__(self, state: WispState):
@@ -41,6 +44,7 @@ class RendererCore:
 
         self._last_state = dict()
         self._last_renderbuffer = None
+        self._last_mergedRenderbuffer = None
 
         # Minimal resolution supported by RendererCore
         self.MIN_RES = 128
@@ -207,9 +211,9 @@ class RendererCore:
             (wisp.core.RenderBuffer): The rendered buffer.
         """
         payload = self._prepare_payload(time_delta)
-        rb = self.render_payload(payload, force_render)
+        rb, mb_rb = self.render_payload(payload, force_render)
         output_rb = self._post_render(payload, rb)
-        return output_rb
+        return output_rb, mb_rb
 
     def _prepare_payload(self, time_delta=None) -> FramePayload:
         """This function will prepare the FramePayload for the current frame.
@@ -293,7 +297,7 @@ class RendererCore:
         visible_renderers = [r for r_id, r in self._renderers.items() if r_id in payload.visible_objects]
         renderers_to_refresh = list(filter(lambda renderer: renderer.needs_refresh(payload), visible_renderers))
         if not self.needs_refresh() and len(renderers_to_refresh) == 0 and not force_render:
-            return self._last_renderbuffer  # No need to regenerate..
+            return self._last_renderbuffer, self._last_mergedRenderbuffer # No need to regenerate.. TODO
 
         # Generate rays
         rays = self.raygen(camera, res_x, res_y)
@@ -304,6 +308,7 @@ class RendererCore:
         clear_depth = self.state.renderer.clear_depth_value
 
         out_rb = self._create_empty_rb(height=camera.height, width=camera.width, dtype=rb_dtype)
+        merged_rb = self._create_empty_rb(height=camera.height, width=camera.width, dtype=rb_dtype)
         for renderer in renderers_in_view:
             if isinstance(renderer, RayTracedRenderer):
                 in_rays = rays.to(device=renderer.device, dtype=renderer.dtype)
@@ -311,13 +316,12 @@ class RendererCore:
             else:   # RasterizedRenderer
                 in_cam = self.camera.to(device=renderer.device, dtype=renderer.dtype)
                 rb = renderer.render(in_cam)
-
             rb = rb.to(device=self.device)
             rb.rgb = rb.rgb.to(dtype=rb_dtype)
             
             rb.alpha = rb.alpha.to(dtype=rb_dtype)
             rb.depth = rb.depth.to(dtype=rb_dtype)
-
+       
             # TODO (operel): if rb.depth is None -> painters algorithm
             # Normalize ray-traced depth buffer to graphics api range
             img_dims = rb.depth.shape
@@ -337,9 +341,14 @@ class RendererCore:
             rb.depth[alpha_mask] = clear_depth
 
             rb.depth = rb.depth.to(rb_dtype)
+            if FRANKENRENDER: # not perfect 
+                print(" render_payload: ", type(renderer))
+                merged_rb = out_rb.blend(merged_rb, channel_kit=self.state.graph.channels)
+
             out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
 
-        return out_rb
+        self._last_mergedRenderbuffer = merged_rb
+        return out_rb, merged_rb
 
     def _post_render(self, payload: FramePayload, rb: RenderBuffer) -> RenderBuffer:
         # Update current resolution in case it was decreased to maintain fps
@@ -355,9 +364,11 @@ class RendererCore:
         for renderer_id, renderer in self._renderers.items():
             if renderer_id in payload.visible_objects:
                 renderer.post_render()
+                print(type(renderer), renderer.channels)
 
         # Create an output renderbuffer to contain the currently viewed mode as rgba channel
         output_rb = self.map_output_channels_to_rgba(rb)
+
         return output_rb
 
     def needs_refresh(self) -> bool:

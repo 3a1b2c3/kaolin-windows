@@ -50,3 +50,4 @@ def setup_cuda_context():
         finally:
             if window is not None:
                 window.close()
+        print("__________Context initalised")

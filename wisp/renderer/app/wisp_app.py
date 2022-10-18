@@ -23,7 +23,7 @@ import imgui
 from kaolin.render.camera import Camera
 
 from wisp.framework import WispState, watch
-from wisp.renderer.core import RendererCore
+from wisp.renderer.core import RendererCore, FRANKENRENDER
 from wisp.renderer.core.control import CameraControlMode, WispKey, WispMouseButton
 from wisp.renderer.core.control import FirstPersonCameraMode, TrackballCameraMode, TurntableCameraMode
 from wisp.renderer.gizmos import Gizmo, WorldGrid, AxisPainter, PrimitivesPainter
@@ -155,7 +155,7 @@ class WispApp(ABC):
         be customized to affect the behaviour of the renderer.
         """
         # Channels available to view over the canvas
-        wisp_state.renderer.available_canvas_channels = ["rgb"]
+        wisp_state.renderer.available_canvas_channels = ["rgb", "alpha"]
         wisp_state.renderer.selected_canvas_channel = "rgb"
 
     def create_widgets(self) -> List[WidgetImgui]:
@@ -329,6 +329,9 @@ class WispApp(ABC):
         if imgui.begin_main_menu_bar():
             main_menu_height = imgui.get_window_height()
             if imgui.begin_menu("File", True):
+                clicked_quit, selected_obj = imgui.menu_item(
+                    "Add .obj", 'Cmd+Q', False, True
+                )
 
                 clicked_quit, selected_quit = imgui.menu_item(
                     "Quit", 'Cmd+Q', False, True
@@ -364,7 +367,9 @@ class WispApp(ABC):
         The rgb and depth channels passed on to the app.
         """
         # The render core returns a RenderBuffer
-        renderbuffer = render_core.render(time_delta, force_render)
+        renderbuffer, mbuffer = render_core.render(time_delta, force_render)
+        if FRANKENRENDER:
+            pass#renderbuffer = mbuffer
         buffer_attachment = renderbuffer.image().rgba
         buffer_attachment = buffer_attachment.flip([0])  # Flip y axis
         img = buffer_attachment.byte().contiguous()

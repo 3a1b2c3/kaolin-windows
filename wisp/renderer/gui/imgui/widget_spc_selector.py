@@ -27,7 +27,6 @@ class WidgetSPCSelector(WidgetImgui):
         self.inited = False
 
     def create_pipeline(self, filename, device):
-        print("______________filename: ", filename)
         # Load SPC content from file
         spc_fields = np.load(filename)
 
@@ -48,7 +47,6 @@ class WidgetSPCSelector(WidgetImgui):
         """
 
         expanded, _ = imgui.collapsing_header("Object Browser", visible=True, flags=imgui.TREE_NODE_DEFAULT_OPEN)
-        print(expanded, "______________paint ")
         if expanded:
             # TODO
             state.extent['dataset_path'] = r'D:\workspace\INTEGRATION\kaolin-wisp\examples\spc_browser'
