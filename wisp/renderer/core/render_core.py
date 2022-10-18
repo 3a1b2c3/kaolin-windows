@@ -414,22 +414,6 @@ class RendererCore:
         layers_to_draw.extend(camera_data_layers)
         return layers_to_draw
 
-
-    def mergeChannelsByDepth(self, rb: RenderBuffer, renderer):
-        selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
-        if not selected_output_channel or not "depth" in renderer.channels:
-            return rb
-        mergedBuffer: RenderBuffer = RenderBuffer(rgb=rb.rgb, depth=rb.depth, alpha=rb.alpha)
-        channels_kit = self.state.graph.channels
-        channel_info = channels_kit.get(selected_output_channel, create_default_channel())
-        print(type(renderer), selected_output_channel)
-        print(selected_output_channel, "channel_info: ", channels_kit.keys(), channel_info)
-        #['rgb', 'alpha', 'depth', 'normal', 'hit', 'err', 'gt']
-        #self.mergeChannelByDepth(mergedBuffer, d_channel, a_channel, rgb_channels)
-
-        return mergedBuffer
-
-
     def map_output_channels_to_rgba(self, rb: RenderBuffer):
         selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
         rb_channel = rb.get_channel(selected_output_channel)
