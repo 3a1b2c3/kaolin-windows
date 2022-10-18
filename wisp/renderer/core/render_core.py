@@ -21,9 +21,9 @@ from wisp.ops.raygen import generate_pinhole_rays, generate_ortho_rays, generate
 from wisp.renderer.core.api import BottomLevelRenderer, RayTracedRenderer, create_neural_field_renderer
 from wisp.renderer.core.api import FramePayload
 from wisp.gfx.datalayers import CameraDatalayers
-from wisp.core.channel_fn import *
 
-FRANKENRENDER = False
+
+FRANKENRENDER = True
 
 class RendererCore:
     def __init__(self, state: WispState):
