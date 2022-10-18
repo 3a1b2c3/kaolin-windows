@@ -329,6 +329,9 @@ class WispApp(ABC):
         if imgui.begin_main_menu_bar():
             main_menu_height = imgui.get_window_height()
             if imgui.begin_menu("File", True):
+                clicked_quit, selected_obj = imgui.menu_item(
+                    "Add .obj", 'Cmd+Q', False, True
+                )
 
                 clicked_quit, selected_quit = imgui.menu_item(
                     "Quit", 'Cmd+Q', False, True
