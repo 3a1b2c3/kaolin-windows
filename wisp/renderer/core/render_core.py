@@ -23,7 +23,7 @@ from wisp.renderer.core.api import FramePayload
 from wisp.gfx.datalayers import CameraDatalayers
 from wisp.core.channel_fn import *
 
-FRANKENRENDER = True
+FRANKENRENDER = False
 
 class RendererCore:
     def __init__(self, state: WispState):
@@ -346,7 +346,8 @@ class RendererCore:
                 merged_rb = self.mergeChannelByDepth(merged_rb, rb.depth, rb.alpha, rb.rgb)
 
             out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
-        self._last_mergedRenderbuffer =  merged_rb
+            merged_rb = out_rb.blend(merged_rb, channel_kit=self.state.graph.channels)
+        self._last_mergedRenderbuffer = merged_rb
         return out_rb, merged_rb
 
     def _post_render(self, payload: FramePayload, rb: RenderBuffer) -> RenderBuffer:
@@ -364,8 +365,7 @@ class RendererCore:
             if renderer_id in payload.visible_objects:
                 renderer.post_render()
                 print(type(renderer), renderer.channels)
-                if FRANKENRENDER and len(self._renderers.items()) > 1: # rgb or depth channel show
-                    pass #rb = self.mergeChannelsByDepth(rb, payload, renderer)
+
         # Create an output renderbuffer to contain the currently viewed mode as rgba channel
         output_rb = self.map_output_channels_to_rgba(rb)
 
@@ -416,10 +416,9 @@ class RendererCore:
 
     def mergeChannelByDepth(self, mergRb: RenderBuffer, d_channel, a_channel, rgb_channels):
         print("d_channel.shape(:", d_channel.shape)
-
-        mergRb.alpha = blend_linear(mergRb.alpha, a_channel, mergRb.alpha, a_channel)
-        mergRb.rgb = blend_depth_composite(mergRb.rgb, rgb_channels, mergRb.alpha, a_channel)
-        mergRb.depth = torch.min(mergRb.depth, d_channel)
+        #mergRb.alpha = blend_linear(mergRb.alpha, a_channel, mergRb.alpha, a_channel)
+        #mergRb.rgb = blend_depth_composite(mergRb.rgb, rgb_channels, mergRb.alpha, a_channel)
+        #mergRb.depth = torch.min(mergRb.depth, d_channel)
         return mergRb
 
     # normalized channels
@@ -442,9 +441,9 @@ like this: https://pytorch.org/docs/stable/torch.html#torch.max 369
     '''
     def mergeChannelsByDepth(self, rb: RenderBuffer, renderer):
         selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
-        mergedBuffer: RenderBuffer = RenderBuffer(rgb=rb.rgb, depth=rb.depth, alpha=rb.alpha)
         if not selected_output_channel or not "depth" in renderer.channels:
             return rb
+        mergedBuffer: RenderBuffer = RenderBuffer(rgb=rb.rgb, depth=rb.depth, alpha=rb.alpha)
         channels_kit = self.state.graph.channels
         channel_info = channels_kit.get(selected_output_channel, create_default_channel())
         print(type(renderer), selected_output_channel)
