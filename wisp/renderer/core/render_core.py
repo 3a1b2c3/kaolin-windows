@@ -341,7 +341,7 @@ class RendererCore:
             rb.depth[alpha_mask] = clear_depth
 
             rb.depth = rb.depth.to(rb_dtype)
-            if FRANKENRENDER: # rgb or depth channel show
+            if FRANKENRENDER: # not perfect 
                 print(" render_payload: ", type(renderer))
                 merged_rb = out_rb.blend(merged_rb, channel_kit=self.state.graph.channels)
 
@@ -414,31 +414,7 @@ class RendererCore:
         layers_to_draw.extend(camera_data_layers)
         return layers_to_draw
 
-    def mergeChannelByDepth(self, mergRb: RenderBuffer, d_channel, a_channel, rgb_channels):
-        print("d_channel.shape(:", d_channel.shape)
-        #mergRb.alpha = blend_linear(mergRb.alpha, a_channel, mergRb.alpha, a_channel)
-        #mergRb.rgb = blend_depth_composite(mergRb.rgb, rgb_channels, mergRb.alpha, a_channel)
-        #mergRb.depth = torch.min(mergRb.depth, d_channel)
-        return mergRb
 
-    # normalized channels
-    '''
-    @dataclass
-class FramePayload:
-    """This is a dataclass which holds metadata for the current frame.
-    """
-    camera: Camera
-    visible_objects: Set[str]
-    interactive_mode: bool
-    render_res_x: int
-    render_res_y: int
-    time_delta: float   # In seconds
-    clear_color: Tuple[float, float, float]
-    channels: Set[str] # Channels requested for the render.
-
-like this: https://pytorch.org/docs/stable/torch.html#torch.max 369
-
-    '''
     def mergeChannelsByDepth(self, rb: RenderBuffer, renderer):
         selected_output_channel = self.state.renderer.selected_canvas_channel.lower()
         if not selected_output_channel or not "depth" in renderer.channels:
