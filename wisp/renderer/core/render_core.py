@@ -12,18 +12,15 @@ import numpy as np
 import torch
 import copy
 from collections import defaultdict
-from typing import Dict, List, Iterable
-
+from typing import Dict, List, Iterable, Tuple
 from kaolin.render.camera import Camera, PinholeIntrinsics, OrthographicIntrinsics
 from wisp.framework import WispState, BottomLevelRendererState
-from wisp.core import RenderBuffer, Rays, PrimitivesPack, create_default_channel
+from wisp.core import RenderBuffer, Rays, PrimitivesPack, create_default_channel, ObjectTransform
 from wisp.ops.raygen import generate_pinhole_rays, generate_ortho_rays, generate_centered_pixel_coords
 from wisp.renderer.core.api import BottomLevelRenderer, RayTracedRenderer, create_neural_field_renderer
 from wisp.renderer.core.api import FramePayload
 from wisp.gfx.datalayers import CameraDatalayers
 
-
-FRANKENRENDER = True
 
 class RendererCore:
     def __init__(self, state: WispState):
@@ -44,7 +41,6 @@ class RendererCore:
 
         self._last_state = dict()
         self._last_renderbuffer = None
-        self._last_mergedRenderbuffer = None
 
         # Minimal resolution supported by RendererCore
         self.MIN_RES = 128
@@ -127,7 +123,8 @@ class RendererCore:
             bl_state = scene_graph.bl_renderers.get(renderer_id)
             if bl_state is None:
                 # If not, create a default one
-                bl_state = BottomLevelRendererState(status='pending', setup_args=dict())
+                object_transform = ObjectTransform(device=self.device,dtype=self.camera.dtype)
+                bl_state = BottomLevelRendererState(status='pending', setup_args=dict(), transform=object_transform)
                 scene_graph.bl_renderers[renderer_id] = bl_state
 
             if bl_state.status == 'loaded':
@@ -150,7 +147,7 @@ class RendererCore:
 
     def _setup_tlas(self, state: WispState):
         # Currently the top-level acceleration structure uses a straightforward ordered list stub
-        return ListTLAS(self._renderers)
+        return ListTLAS(state, self._renderers)
 
     def set_full_resolution(self):
         self.res_x = self.camera.width
@@ -211,9 +208,9 @@ class RendererCore:
             (wisp.core.RenderBuffer): The rendered buffer.
         """
         payload = self._prepare_payload(time_delta)
-        rb, mb_rb = self.render_payload(payload, force_render)
+        rb = self._render_payload(payload, force_render)
         output_rb = self._post_render(payload, rb)
-        return output_rb, mb_rb
+        return output_rb
 
     def _prepare_payload(self, time_delta=None) -> FramePayload:
         """This function will prepare the FramePayload for the current frame.
@@ -279,7 +276,7 @@ class RendererCore:
             hit=None
         )
 
-    def render_payload(self, payload: FramePayload, force_render: bool) -> RenderBuffer:
+    def _render_payload(self, payload: FramePayload, force_render: bool) -> RenderBuffer:
         """Renders a RenderBuffer using a FramePayload which contains metadata.
 
         Args:
@@ -297,31 +294,31 @@ class RendererCore:
         visible_renderers = [r for r_id, r in self._renderers.items() if r_id in payload.visible_objects]
         renderers_to_refresh = list(filter(lambda renderer: renderer.needs_refresh(payload), visible_renderers))
         if not self.needs_refresh() and len(renderers_to_refresh) == 0 and not force_render:
-            return self._last_renderbuffer, self._last_mergedRenderbuffer # No need to regenerate.. TODO
+            return self._last_renderbuffer  # No need to regenerate..
 
         # Generate rays
         rays = self.raygen(camera, res_x, res_y)
-        renderer_to_hit_rays = self._tlas.traverse(rays, payload)
-        renderers_in_view = renderer_to_hit_rays.keys()
+        renderers_in_view = self._tlas.traverse(rays, payload)
 
         rb_dtype = torch.float32
         clear_depth = self.state.renderer.clear_depth_value
 
         out_rb = self._create_empty_rb(height=camera.height, width=camera.width, dtype=rb_dtype)
-        merged_rb = self._create_empty_rb(height=camera.height, width=camera.width, dtype=rb_dtype)
-        for renderer in renderers_in_view:
+        for renderer, hit_rays in renderers_in_view:
             if isinstance(renderer, RayTracedRenderer):
-                in_rays = rays.to(device=renderer.device, dtype=renderer.dtype)
+                in_rays = hit_rays.to(device=renderer.device, dtype=renderer.dtype)
                 rb = renderer.render(in_rays)
             else:   # RasterizedRenderer
+                # TODO (operel): Handle transformed rasterized objects
                 in_cam = self.camera.to(device=renderer.device, dtype=renderer.dtype)
                 rb = renderer.render(in_cam)
+
             rb = rb.to(device=self.device)
             rb.rgb = rb.rgb.to(dtype=rb_dtype)
-            
+
             rb.alpha = rb.alpha.to(dtype=rb_dtype)
             rb.depth = rb.depth.to(dtype=rb_dtype)
-       
+
             # TODO (operel): if rb.depth is None -> painters algorithm
             # Normalize ray-traced depth buffer to graphics api range
             img_dims = rb.depth.shape
@@ -341,14 +338,9 @@ class RendererCore:
             rb.depth[alpha_mask] = clear_depth
 
             rb.depth = rb.depth.to(rb_dtype)
-            if FRANKENRENDER: # not perfect 
-                print(" render_payload: ", type(renderer))
-                merged_rb = out_rb.blend(merged_rb, channel_kit=self.state.graph.channels)
-
             out_rb = out_rb.blend(rb, channel_kit=self.state.graph.channels)
 
-        self._last_mergedRenderbuffer = merged_rb
-        return out_rb, merged_rb
+        return out_rb
 
     def _post_render(self, payload: FramePayload, rb: RenderBuffer) -> RenderBuffer:
         # Update current resolution in case it was decreased to maintain fps
@@ -364,11 +356,9 @@ class RendererCore:
         for renderer_id, renderer in self._renderers.items():
             if renderer_id in payload.visible_objects:
                 renderer.post_render()
-                print(type(renderer), renderer.channels)
 
         # Create an output renderbuffer to contain the currently viewed mode as rgba channel
         output_rb = self.map_output_channels_to_rgba(rb)
-
         return output_rb
 
     def needs_refresh(self) -> bool:
@@ -409,6 +399,8 @@ class RendererCore:
         for obj_state in self.state.graph.bl_renderers.values():
             for layer_id, layer in obj_state.data_layers.items():
                 if obj_state.toggled_data_layers[layer_id]:
+                    # Attach object transform reference to data layers, assumes the object maintains this transform ref
+                    layer.transform = obj_state.transform
                     layers_to_draw.append(layer)
         camera_data_layers = self._cameras_data_layers()
         layers_to_draw.extend(camera_data_layers)
@@ -480,16 +472,33 @@ class RendererCore:
 
 
 class TLAS(abc.ABC):
-    def traverse(self, payload: FramePayload) -> Dict[BottomLevelRenderer, Rays]:
+    def traverse(self, rays: Rays, payload: FramePayload) -> Dict[BottomLevelRenderer, Rays]:
         pass
 
+    def transform_rays(self, rays: Rays, transform: ObjectTransform) -> Rays:
+        rays_shape = rays.shape
+        rays = rays.reshape((-1, 3))
+        ray_origins = torch.cat((rays.origins, torch.ones_like(rays.origins[:,:1])), dim=-1)
+        ray_dirs = torch.cat((rays.dirs, torch.zeros_like(rays.dirs[:,:1])), dim=-1)
+        inv_model_matrix = transform.inv_model_matrix().to(dtype=rays.origins.dtype)
+        ray_origins = (inv_model_matrix @ ray_origins.T).T
+        ray_dirs = (inv_model_matrix @ ray_dirs.T).T
+        transformed_rays = Rays(ray_origins[:, :3], dirs=ray_dirs[:, :3],
+                                dist_min=rays.dist_min, dist_max=rays.dist_max)
+        return transformed_rays.reshape((*rays_shape, 3))
 
-class ListTLAS(abc.ABC):
-    def __init__(self, bl_renderers: Dict[str, BottomLevelRenderer]):
+class ListTLAS(TLAS):
+    def __init__(self, state: WispState, bl_renderers: Dict[str, BottomLevelRenderer]):
+        self.state = state
         self.bl_renderers = list(bl_renderers.values())
         self.bl_renderer_ids = list(bl_renderers.keys())
 
-    def traverse(self, rays: Rays, payload: FramePayload) -> Dict[BottomLevelRenderer, Rays]:
+    def traverse(self, rays: Rays, payload: FramePayload) -> List[Tuple[BottomLevelRenderer, Rays]]:
         # TODO (operel): invoke aabb test on bottom level renderers
-        return {bl_renderer: rays for renderer_id, bl_renderer in zip(self.bl_renderer_ids, self.bl_renderers)
-                if renderer_id in payload.visible_objects}
+        renderers_to_hit_rays = list()
+        for renderer_id, renderer in zip(self.bl_renderer_ids, self.bl_renderers):
+            if renderer_id in payload.visible_objects:
+                object_transform = self.state.graph.bl_renderers[renderer_id].transform
+                hit_rays = self.transform_rays(rays, object_transform)
+                renderers_to_hit_rays.append((renderer, hit_rays))
+        return renderers_to_hit_rays

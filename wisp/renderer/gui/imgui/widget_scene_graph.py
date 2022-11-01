@@ -5,40 +5,17 @@
 # and any modifications thereto.  Any use, reproduction, disclosure or
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION & AFFILIATES is strictly prohibited.
-from contextlib import contextmanager
-import imgui
-import torch 
 
+import imgui
 from wisp.core.colors import light_purple, white, lime, orange
 from wisp.framework import WispState
 from .widget_imgui import WidgetImgui
 from .widget_radiance_pipeline_renderer import WidgetNeuralRadianceFieldRenderer
 from .widget_sdf_pipeline_renderer import WidgetNeuralSDFRenderer
 from .widget_cameras import WidgetCameraProperties
+from .widget_object_transform import WidgetObjectTransform
 from wisp.renderer.core.api import request_redraw
 
-@contextmanager
-def item_width(width=None):
-    if width is not None:
-        imgui.push_item_width(width)
-        yield
-        imgui.pop_item_width()
-    else:
-        yield
-
-
-def input_text(label, value, buffer_length=400, flags=None, width=None, help_text=''):
-    old_value = value
-    color = list(imgui.get_style().colors[imgui.COLOR_TEXT])
-    with item_width(width):
-        imgui.push_style_color(imgui.COLOR_TEXT, *color)
-        value = value if value != '' else help_text
-        changed, value = imgui.input_text("", label, buffer_length)
-        value = value if value != help_text else ''
-        imgui.pop_style_color(1)
-    if not flags and imgui.INPUT_TEXT_ENTER_RETURNS_TRUE:
-        changed = (value != old_value)
-    return changed, value
 
 class WidgetSceneGraph(WidgetImgui):
     names_to_widgets = dict(
@@ -61,6 +38,7 @@ class WidgetSceneGraph(WidgetImgui):
     def __init__(self):
         super().__init__()
         self.object_widgets = dict()
+        self.transform_widget = WidgetObjectTransform()
 
     def get_bl_renderer_widget(self, object_id, object_type):
         if object_id not in self.object_widgets:
@@ -79,21 +57,6 @@ class WidgetSceneGraph(WidgetImgui):
         for widget_id in list(self.object_widgets.keys()):
             if widget_id not in state.graph.bl_renderers:
                 del self.object_widgets[widget_id]
-
-    '''
-    Ray origin,  Normal
-    '''
-    @staticmethod
-    def paint_debug_checkbox(state, key):
-        visible_objects = state.debug
-        if (key in visible_objects):
-            tokens = key.split("_")
-            visibility_toggled, is_checked = imgui.checkbox(tokens[0] + " as " + tokens[-1], visible_objects.get(key))
-            state.debug[key] = is_checked
-            if visibility_toggled:
-                request_redraw(state)
-
-
 
     @staticmethod
     def paint_object_checkbox(state, obj_id):
@@ -134,51 +97,26 @@ class WidgetSceneGraph(WidgetImgui):
                 self.paint_all_objects_checkbox(state)
                 imgui.same_line()
                 if imgui.tree_node("Objects", imgui.TREE_NODE_DEFAULT_OPEN):
-                    # add debug drawing 
                     for obj_id, obj in bl_renderers.items():
                         if obj.status != 'loaded':
                             continue
-                        #sself.paint_object_debug_checkbox(state, "wireframe")
-                        #self.paint_object_debug_checkbox(state, "points")
-
                         obj_type = type(obj.renderer).__name__
                         obj_color = self.get_object_color(obj_type)
-                        self.paint_object_checkbox(state, obj_id)
 
+                        self.paint_object_checkbox(state, obj_id)
                         imgui.same_line()
                         if imgui.tree_node(obj_id, imgui.TREE_NODE_DEFAULT_OPEN):
-                            if imgui.tree_node("Add mesh:", imgui.TREE_NODE_DEFAULT_OPEN):
-                                value = "C:"
-                                changed, value = input_text("Path:", value)
-                                imgui.same_line()
-                                if imgui.button("Find", width=30):
-                                    pass
-                                if imgui.button("Add", width=100):
-                                    print(changed, "value: ", value)
-                                imgui.same_line()
-                                if imgui.button("Merge", width=100):
-                                    pass 
-                                imgui.tree_pop()
-
                             imgui.text(f"Type:")
                             imgui.same_line()
                             obj_title = self.get_object_title(obj_type)
                             imgui.text_colored(f"{obj_title}", *obj_color)
-                            flags = imgui.INPUT_TEXT_ALWAYS_INSERT_MODE | imgui.INPUT_TEXT_CHARS_DECIMAL
-                            # matrix
-                            t=torch.Tensor([0,0,0])
-                            r=torch.Tensor([0,0,0])
-                            s=torch.Tensor([1,1,1])
-                            rchanged, rvalues = imgui.input_float3("Transform", t[0], t[1], t[2], flags=flags)
-                            uchanged, uvalues = imgui.input_float3("Rotate", r[0], r[1], r[2], flags=flags)
-                            fchanged, fvalues = imgui.input_float3("Scale", s[0], s[1], s[2], flags=flags)
-                            if imgui.tree_node("Debug draw:", imgui.TREE_NODE_DEFAULT_OPEN):                
-                                for k, _v in state.debug.items(): 
-                                    self.paint_debug_checkbox(state, k)
+
+                            object_transform = obj.transform
+                            if object_transform is not None:
+                                if imgui.tree_node("Transform", imgui.TREE_NODE_DEFAULT_OPEN):
+                                    self.transform_widget.paint(state, object_transform)
                                 imgui.tree_pop()
 
-                            if rchanged or uchanged or fchanged:
-                                pass
                             if imgui.tree_node("Properties", imgui.TREE_NODE_DEFAULT_OPEN):
                                 bl_renderer_widget = self.get_bl_renderer_widget(obj_id, obj_type)
                                 if bl_renderer_widget is not None:
@@ -216,12 +154,4 @@ class WidgetSceneGraph(WidgetImgui):
                             imgui.tree_pop()
                     imgui.tree_pop()
                 # TODO (operel): Add proper camera widget caching
-                if imgui.tree_node("Image planes", imgui.TREE_NODE_DEFAULT_OPEN):
-                    for cam_id, cam in state.graph.cameras.items():
-                        self.paint_object_checkbox(state, cam_id)
-                        imgui.same_line()
-                        if imgui.tree_node(f"Camera {cam_id}"):
-                            obj_type = type(cam).__name__
-                            obj_color = self.get_object_color(obj_type)
-                            imgui.tree_pop()
-                    imgui.tree_pop()
+            
