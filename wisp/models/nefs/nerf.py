@@ -32,13 +32,11 @@ import kaolin.ops.spc as spc_ops
 class NeuralRadianceField(BaseNeuralField):
     """Model for encoding radiance fields (density and plenoptic color)
     """
-
     def init_embedder(self):
         """Creates positional embedding functions for the position and view direction.
         """
         self.pos_embedder, self.pos_embed_dim = get_positional_embedder(self.pos_multires, 
                                                                        self.embedder_type == "positional")
-                                                                
         self.view_embedder, self.view_embed_dim = get_positional_embedder(self.view_multires, 
                                                                          self.embedder_type == "positional")
         log.info(f"Position Embed Dim: {self.pos_embed_dim}")
@@ -48,18 +46,24 @@ class NeuralRadianceField(BaseNeuralField):
         """Initializes the decoder object. 
         """
         if self.multiscale_type == 'cat':
-            self.effective_feature_dim = self.grid.feature_dim * self.num_lods #32
+            self.effective_feature_dim = self.grid.feature_dim * self.num_lods
         else:
             self.effective_feature_dim = self.grid.feature_dim
 
-        self.input_dim = self.effective_feature_dim + self.view_embed_dim
+        self.input_dim = self.effective_feature_dim
 
         if self.position_input:
             self.input_dim += self.pos_embed_dim
 
-        self.decoder = BasicDecoder(self.input_dim, 4, get_activation_class(self.activation_type), True,
-                                    layer=get_layer_class(self.layer_type), num_layers=self.num_layers,
-                                    hidden_dim=self.hidden_dim, skip=[])
+        self.decoder_density = BasicDecoder(self.input_dim, 16, get_activation_class(self.activation_type), True,
+                                            layer=get_layer_class(self.layer_type), num_layers=self.num_layers,
+                                            hidden_dim=self.hidden_dim, skip=[])
+
+        self.decoder_density.lout.bias.data[0] = 1.0
+
+        self.decoder_color = BasicDecoder(16 + self.view_embed_dim, 3, get_activation_class(self.activation_type), True,
+                                          layer=get_layer_class(self.layer_type), num_layers=self.num_layers+1,
+                                          hidden_dim=self.hidden_dim, skip=[])
 
     def init_grid(self):
         """Initialize the grid object.
@@ -79,7 +83,7 @@ class NeuralRadianceField(BaseNeuralField):
                                base_lod=self.base_lod, num_lods=self.num_lods,
                                interpolation_type=self.interpolation_type, multiscale_type=self.multiscale_type,
                                **self.kwargs)
-    # unused buy default
+
     def prune(self):
         """Prunes the blas based on current state.
         """
@@ -131,8 +135,6 @@ class NeuralRadianceField(BaseNeuralField):
         """
         self._register_forward_function(self.rgba, ["density", "rgb"])
 
-    #len(ray_d) == len( coords)
-    # put real features in coodebook?
     def rgba(self, coords, ray_d, pidx=None, lod_idx=None):
         """Compute color and density [particles / vol] for the provided coordinates.
 
@@ -153,38 +155,28 @@ class NeuralRadianceField(BaseNeuralField):
             lod_idx = len(self.grid.active_lods) - 1
         batch, num_samples, _ = coords.shape
         timer.check("rf_rgba_preprocess")
-
-        # Embed coordinates into high-dimensional vectors with the grid.  HashGrid
-        feats = self.grid.interpolate(coords, lod_idx).reshape(-1, self.effective_feature_dim)
-        #print(feats.shape, "self.effective_feature_dim: ", self.effective_feature_dim) im:  32
-        self.features = feats
-        self.coords = coords
-        #print(self.effective_feature_dim) 32
-        #torch.Size([107, 32])  __self.features:  torch.Size([107, 1, 3])
-        #print(self.features.shape, " __self.features: " , self.coords.shape)
-        timer.check("rf_rgba_interpolate")
-
-        # Optionally concat the positions to the embedding, and also concatenate embedded view directions.
-        if self.position_input:
-            fdir = torch.cat([feats,
-                self.pos_embedder(coords.reshape(-1, 3)),
-                self.view_embedder(-ray_d)[:,None].repeat(1, num_samples, 1).view(-1, self.view_embed_dim)], dim=-1)
-        else: #
-            fdir = torch.cat([feats,
-                self.view_embedder(-ray_d)[:,None].repeat(1, num_samples, 1).view(-1, self.view_embed_dim)], dim=-1)
-            #print(lod_idx, "___ray_d:", len(ray_d), len( coords))
-        timer.check("rf_rgba_embed_cat")
         
+        # Embed coordinates into high-dimensional vectors with the grid.
+        feats = self.grid.interpolate(coords, lod_idx).reshape(-1, self.effective_feature_dim)
+        timer.check("rf_rgba_interpolate")
+        
+        if self.position_input:
+            raise NotImplementedError
+
         # Decode high-dimensional vectors to RGBA.
-        rgba = self.decoder(fdir)
+        density_feats = self.decoder_density(feats)
         timer.check("rf_rgba_decode")
+        
+        # Optionally concat the positions to the embedding, and also concatenate embedded view directions.
+        fdir = torch.cat([density_feats,
+            self.view_embedder(-ray_d)[:,None].repeat(1, num_samples, 1).view(-1, self.view_embed_dim)], dim=-1)
+        timer.check("rf_rgba_embed_cat")
 
         # Colors are values [0, 1] floats
-        colors = torch.sigmoid(rgba[...,:3]).reshape(batch, num_samples, 3)
+        colors = torch.sigmoid(self.decoder_color(fdir)).reshape(batch, num_samples, 3)
 
         # Density is [particles / meter], so need to be multiplied by distance
-        density = torch.relu(rgba[...,3:4]).reshape(batch, num_samples, 1)
+        density = torch.relu(density_feats[...,0:1]).reshape(batch, num_samples, 1)
         timer.check("rf_rgba_activation")
         
         return dict(rgb=colors, density=density)
-
